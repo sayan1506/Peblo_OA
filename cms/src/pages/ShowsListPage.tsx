@@ -49,6 +49,9 @@ export function ShowsListPage() {
           <span style={{ marginRight: 12, color: "#6b6375" }}>
             Logged in as <strong>{role}</strong>
           </span>
+          <Link to="/shows/new" style={{ marginRight: 12 }}>
+            New show
+          </Link>
           <button type="button" onClick={logout}>
             Log out
           </button>
@@ -116,7 +119,10 @@ export function ShowsListPage() {
                   <td>{show.categories.join(", ") || "—"}</td>
                   <td>{show.status}</td>
                   <td>
-                    <Link to={`/shows/${show.id}`}>View episodes</Link>
+                    <Link to={`/shows/${show.id}`} style={{ marginRight: 12 }}>
+                      View episodes
+                    </Link>
+                    <Link to={`/shows/${show.id}/edit`}>Edit</Link>
                   </td>
                 </tr>
               ))

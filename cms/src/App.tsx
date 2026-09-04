@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { EpisodeFormPage } from "./pages/EpisodeFormPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ShowDetailPage } from "./pages/ShowDetailPage";
+import { ShowFormPage } from "./pages/ShowFormPage";
 import { ShowsListPage } from "./pages/ShowsListPage";
 
 function App() {
@@ -17,10 +19,42 @@ function App() {
         }
       />
       <Route
+        path="/shows/new"
+        element={
+          <ProtectedRoute>
+            <ShowFormPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/shows/:showId"
         element={
           <ProtectedRoute>
             <ShowDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/shows/:showId/edit"
+        element={
+          <ProtectedRoute>
+            <ShowFormPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/shows/:showId/seasons/:seasonId/episodes/new"
+        element={
+          <ProtectedRoute>
+            <EpisodeFormPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/shows/:showId/episodes/:episodeId/edit"
+        element={
+          <ProtectedRoute>
+            <EpisodeFormPage />
           </ProtectedRoute>
         }
       />

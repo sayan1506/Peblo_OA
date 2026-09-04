@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { FormError } from "../components/FormError";
 
 export function LoginPage() {
   const { token, login } = useAuth();
@@ -58,11 +59,7 @@ export function LoginPage() {
             style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }}
           />
         </div>
-        {error && (
-          <p role="alert" style={{ color: "crimson", marginBottom: 12 }}>
-            {error}
-          </p>
-        )}
+        {error && <FormError message={error} />}
         <button type="submit" disabled={submitting} style={{ padding: "8px 16px" }}>
           {submitting ? "Logging in…" : "Log in"}
         </button>
