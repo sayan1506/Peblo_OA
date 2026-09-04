@@ -4,6 +4,7 @@ import { ApiError } from "../api/client";
 import { useCreateEpisode, useEpisode, useUpdateEpisode } from "../api/episodes";
 import { LANGUAGES, STATUSES } from "../constants/reference";
 import { ArtworkSlot } from "../components/ArtworkSlot";
+import { ErrorState } from "../components/ListStates";
 import { FormError } from "../components/FormError";
 
 export function EpisodeFormPage() {
@@ -62,6 +63,20 @@ export function EpisodeFormPage() {
     return (
       <main style={{ maxWidth: 480, margin: "40px auto", padding: "0 16px" }}>
         <p>Loading…</p>
+      </main>
+    );
+  }
+
+  if (isEdit && existing.isError) {
+    return (
+      <main style={{ maxWidth: 480, margin: "40px auto", padding: "0 16px" }}>
+        <p>
+          <Link to={backTo}>&larr; Back to show</Link>
+        </p>
+        <ErrorState
+          message={existing.error instanceof ApiError ? existing.error.message : "Failed to load this episode."}
+          onRetry={() => existing.refetch()}
+        />
       </main>
     );
   }

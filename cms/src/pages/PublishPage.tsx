@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { usePublishCatalog, usePublishRuns, useValidationReport } from "../api/publish";
 import { useAuth } from "../auth/AuthContext";
-import { EmptyState, ErrorState } from "../components/ListStates";
+import { EmptyState, ErrorState, PermissionDeniedState } from "../components/ListStates";
 import { FormError } from "../components/FormError";
 import { Pagination } from "../components/Pagination";
 
@@ -119,7 +119,7 @@ export function PublishPage() {
         <h2>Publish</h2>
 
         {role !== "admin" && (
-          <p style={{ color: "#6b6375" }}>Publishing requires the admin role. You're signed in as {role}.</p>
+          <PermissionDeniedState message={`Publishing requires the admin role. You're signed in as ${role}.`} />
         )}
 
         {role === "admin" && (
@@ -137,11 +137,16 @@ export function PublishPage() {
                 Resolve {totalBlocking} blocking issue(s) above before publishing.
               </p>
             )}
-            {publish.error && (
-              <FormError
-                message={publish.error instanceof ApiError ? publish.error.message : "Failed to publish catalog."}
-              />
-            )}
+            {publish.error &&
+              (publish.error instanceof ApiError && publish.error.status === 403 ? (
+                <div style={{ marginTop: 8 }}>
+                  <PermissionDeniedState message={publish.error.message} />
+                </div>
+              ) : (
+                <FormError
+                  message={publish.error instanceof ApiError ? publish.error.message : "Failed to publish catalog."}
+                />
+              ))}
             {lastResult && (
               <p style={{ color: "#1a7f37", margin: "8px 0 0" }}>
                 Published — {lastResult.show_count} show(s), {lastResult.episode_count} episode(s).

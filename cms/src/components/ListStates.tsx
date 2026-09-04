@@ -40,3 +40,14 @@ export function EmptyState({ message, action }: { message: string; action?: Reac
     </div>
   );
 }
+
+export function PermissionDeniedState({ message }: { message: string }) {
+  return (
+    <div
+      role="status"
+      style={{ padding: 16, border: "1px solid #d9a34a", borderRadius: 4, background: "#fdf6e8" }}
+    >
+      <p style={{ margin: 0, color: "#8a6116" }}>{message}</p>
+    </div>
+  );
+}
