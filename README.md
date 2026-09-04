@@ -1,17 +1,41 @@
 # Peblo TV Mini
 
-A miniature streaming platform: a CMS for uploading show/episode content and artwork, a FastAPI + PostgreSQL backend that publishes a catalogue, and a Netflix-style viewer UI that browses it.
+Take-home challenge for Peblo (Full-Stack Platform Engineer, Python/FastAPI + React).
 
-**Stack:** FastAPI, PostgreSQL, React + TypeScript
+CMS upload -> published catalogue -> Netflix-style browse. An internal CMS uploads show/episode content and artwork, the backend validates everything and publishes a catalogue file, and a separate viewer UI reads only that file.
 
-## Decisions & trade-offs (Phase A1)
+## Stack
 
-- **Postgres port conflict.** A native Postgres service was already bound to `5432` on the dev machine. Mapped the docker-compose `db` service to host port `5433` instead of fighting the existing install; `.env` / `.env.example` reflect this.
-- **`.env` location.** Alembic runs from `backend/`, so `.env` needs to live in `backend/.env` (not the repo root) for `pydantic-settings` to pick it up. Cost some time tracking down a silent fallback to default credentials.
-- **`categories` schema.** The model started as a single `category: str` column, matching an initial guess at the shape. Once `seed_shows.json` arrived, `categories` turned out to be a list per show/episode. Switched to a Postgres `ARRAY(String)` column with a GIN index rather than a many-to-many join table — simpler migration, adequate for this data size, revisit if categories ever need their own metadata.
-- **Seed data issues found** (surfaced by `scripts/seed.py`, feeds the validation report in a later phase):
-  - `ep_9001` and `ep_0004` share `content_group="motis-many-lives-s01e02"` and `language="hi"` — violates the `(content_group, language)` uniqueness rule. The script skips the duplicate and logs it rather than failing the whole load.
-  - `ep_0036` is marked `published` with `artwork_available: []` — violates "no publish without artwork."
-  - All 8 "Rhyme Rangers" episodes have `section: null` — the show can never publish until a section is set.
+FastAPI, PostgreSQL (SQLAlchemy + Alembic), React + TypeScript for the CMS and viewer.
 
-More details on setup and design decisions will be added as the project develops.
+## Status
+
+Backend skeleton only so far (Part A, phase 1): schema, migrations, seed script, health check. CRUD/roles, artwork upload, the publish job, CMS, viewer, and CI are still to come.
+
+## Running it
+
+Only the backend skeleton runs right now.
+
+```
+docker compose up -d db
+cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env
+alembic upgrade head
+python scripts/seed.py
+uvicorn app.main:app --reload
+```
+
+Postgres is mapped to host port 5433, not 5432 - there's already a native Postgres install on this machine sitting on 5432, so the compose db needed a different port. `.env` needs to live inside `backend/`, not the repo root, since that's where Alembic and uvicorn actually run from.
+
+## Decisions & trade-offs
+
+- `categories` turned out to be a list per show in the real seed data, not a single value like I'd originally modeled. Went with a Postgres array column + GIN index instead of a proper join table - simpler migration, good enough at this data size, would revisit if categories ever need their own metadata.
+- The seed data has real issues, all caught by `scripts/seed.py`:
+  - `ep_9001` and `ep_0004` both use `content_group="motis-many-lives-s01e02"` + `language="hi"` - breaks the `(content_group, language)` uniqueness rule. The script skips the duplicate and logs it instead of failing the whole load.
+  - `ep_0036` is marked published with no artwork.
+  - All 8 "Rhyme Rangers" episodes have no section, so that show can never publish as-is.
+
+More to add here as the rest of the parts get built.
