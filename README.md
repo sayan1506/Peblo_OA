@@ -10,11 +10,11 @@ FastAPI, PostgreSQL (SQLAlchemy + Alembic), React + TypeScript for the CMS and v
 
 ## Status
 
-Part A, phases 1-2 done: schema, migrations, seed script, health check, and JWT auth with editor/admin roles. Nothing is gated behind a role yet since there are no CRUD/admin routes for it to protect - that's next (phase 3). Artwork upload, the publish job, CMS, viewer, and CI are all still to come.
+Part A, phases 1-3 done: schema, migrations, seed script, health check, JWT auth with editor/admin roles, and full CRUD for shows/seasons/episodes with the three publish-blocking rules enforced. Artwork upload, the publish job, CMS, viewer, and CI are still to come.
 
 ## Running it
 
-Only the backend skeleton + auth run right now.
+Backend skeleton + auth + CRUD run right now.
 
 ```
 docker compose up -d db
@@ -36,7 +36,15 @@ The seed script creates two test accounts: `editor@peblo.dev` / `editor123` and 
 curl -X POST http://localhost:8000/auth/login -d "username=editor@peblo.dev&password=editor123"
 ```
 
-Send it back as `Authorization: Bearer <token>` on anything role-gated once those routes exist.
+Send it back as `Authorization: Bearer <token>` on everything under `/shows`, `/seasons`, `/episodes` - all of it is role-gated now, reads included.
+
+Quick smoke test once you have a token:
+
+```
+curl http://localhost:8000/shows -H "Authorization: Bearer <token>"
+curl -X POST http://localhost:8000/shows -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"title":"Test Show","slug":"test-show","section":"series","categories":["music"]}'
+```
 
 ## Decisions & trade-offs
 
@@ -46,6 +54,8 @@ Send it back as `Authorization: Bearer <token>` on anything role-gated once thos
   - `ep_0036` is marked published with no artwork.
   - All 8 "Rhyme Rangers" episodes have no section, so that show can never publish as-is.
 - Auth is a plain JWT bearer token, not a full OAuth setup - login exchanges email/password for a signed token, `require_role()` is a FastAPI dependency checked per route. Admin implies editor, so an admin token passes an editor-only check too. This is enough for the two internal CMS roles the brief asks for.
-- The viewer-facing catalogue endpoints (`GET /catalog`, `GET /catalog/search`) are intentionally public, no login. The brief only defines roles for the CMS side (editor/admin), and a red flag it calls out is the viewer UI touching admin endpoints at all - so keeping the read side open and gating only `/admin/*` and the CRUD routes is the intended split, not an oversight.
+- The viewer-facing catalogue endpoints (`GET /catalog`, `GET /catalog/search`, not built yet) are the only ones meant to be public. Every route under `/shows`, `/seasons`, `/episodes` - including plain list/read - requires an editor token. This is CMS-internal content management, not public data, so there's no reason to leave reads open just because they're non-mutating.
+- The `(content_group, language)` uniqueness check and the "no publish without artwork/duration" / "no publish without section" rules are enforced at the API layer (422/409 with a real message), not just left to the DB constraint from phase 1 to surface as a raw error. Verified this stays consistent with what `scripts/seed.py` already flags by re-running the seed data's known bad rows (the Rhyme Rangers show, episode `ep_0036`) through the live API and getting the same rejections.
+- Show delete cascades to its seasons/episodes/artwork (DB-level cascade from phase 1). Left as-is at the API level since there's no reason to change the data model for this; a confirmation step belongs in the CMS UI (Part B), not the API contract.
 
 More to add here as the rest of the parts get built.
