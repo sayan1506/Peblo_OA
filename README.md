@@ -10,7 +10,7 @@ FastAPI, PostgreSQL (SQLAlchemy + Alembic), React + TypeScript for the CMS and v
 
 ## Status
 
-Part A, phases 1-4 done: schema, migrations, seed script, health check, JWT auth with editor/admin roles, full CRUD for shows/seasons/episodes with the three publish-blocking rules enforced, and artwork upload with a storage abstraction. The publish job, CMS, viewer, and CI are still to come.
+Part A, phases 1-5 done: schema, migrations, seed script, health check, JWT auth with editor/admin roles, full CRUD for shows/seasons/episodes with the three publish-blocking rules enforced, artwork upload with a storage abstraction, and an atomic publish job that builds the catalogue file. The read endpoints (`/catalog`, `/catalog/search`), validation report, CMS, viewer, and CI are still to come.
 
 ## Running it
 
@@ -50,6 +50,14 @@ curl -X POST "http://localhost:8000/artwork?kind=poster&show_id=1" -H "Authoriza
 
 Uploaded files land in `backend/storage/` locally and are served back from `/static/...`.
 
+Publishing needs an admin token (editor is not enough):
+
+```
+curl -X POST http://localhost:8000/admin/catalog/publish -H "Authorization: Bearer <admin-token>"
+```
+
+Writes `backend/storage/catalog.json` and records a `publish_runs` row either way, success or failure.
+
 ## Decisions & trade-offs
 
 - `categories` turned out to be a list per show in the real seed data, not a single value like I'd originally modeled. Went with a Postgres array column + GIN index instead of a proper join table - simpler migration, good enough at this data size, would revisit if categories ever need their own metadata.
@@ -66,5 +74,12 @@ Uploaded files land in `backend/storage/` locally and are served back from `/sta
 - No `banner_good.jpg` exists in the provided assets, so there's no local file to run a banner happy-path test against end-to-end. Covered that gap with a unit test on `validate_artwork("banner", ...)` using an in-memory 1280x720 image instead.
 - Storage is behind a small `Storage` ABC (`put`/`delete`) with a `LocalStorage` implementation chosen by `settings.storage_backend`. Swapping in something like R2 later means adding one new class and one branch in the factory - no router, model, or validation code changes.
 - Serving uploaded files back is a plain `StaticFiles` mount at `/static`, not a proxied `GET /artwork/{id}/file` route. Simpler for local dev; if a remote backend needs signed URLs later, that's the point where a dedicated route would replace the mount.
+- Publishing is made atomic in `LocalStorage.put` itself, not in the publish job: write to a temp file in the same directory, then `os.replace` it over the real key. `os.replace` is an atomic rename on the same filesystem, so a reader of `catalog.json` never sees a half-written file, and a crash mid-write leaves the previous good file untouched (verified with a test that forces the rename to fail and confirms the original content survives). This lives in the storage class rather than the publish job so a future `R2Storage` - where a single `PutObject` call is already atomic - doesn't need it at all.
+- `PublishRun` gained a `detail` column (new migration) to record *why* a run failed, not just that it did. The run row is inserted with `outcome="running"` and committed before the catalogue is built, so a crash mid-build leaves a "running" row behind instead of nothing.
+- Publish rebuilds the whole catalogue from the current DB state every time and overwrites the same file key, so it's naturally idempotent - running it twice with no data changes produces byte-identical output (verified in testing).
+- Season 0 (trailers) is kept in the catalogue, just split into its own `trailers` array per show instead of `seasons`. The brief's rule is that trailers can't show up as a normal season in the viewer, not that they should disappear - they're still real published content someone uploaded.
+- Sections in the catalogue are ordered by `reference.json`'s `sections` list (`featured, series, minisodes, songs`), not alphabetically - that's presumably the intended browse order.
+- `content_group` collapsing picks one canonical title/duration per group - preferring the `en` row if one exists, else whichever language code sorts first. Nothing in the seed data has language variants disagreeing on title, but the schema doesn't guarantee that, so this is a deliberate tie-breaker rather than an assumption.
+- No pagination inside the catalogue file - at 8 shows / ~95 episodes it's trivially small. Would need addressing at real scale; noted as a known limit rather than solved now.
 
 More to add here as the rest of the parts get built.

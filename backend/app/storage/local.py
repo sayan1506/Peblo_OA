@@ -1,3 +1,5 @@
+import os
+import tempfile
 from pathlib import Path
 
 from app.storage.base import Storage
@@ -11,7 +13,16 @@ class LocalStorage(Storage):
     def put(self, key: str, data: bytes, content_type: str) -> str:
         path = self.base_path / key
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+
+        fd, tmp_path = tempfile.mkstemp(dir=path.parent)
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(data)
+            os.replace(tmp_path, path)  # atomic rename, same filesystem
+        except Exception:
+            os.unlink(tmp_path)
+            raise
+
         return f"/static/{key}"
 
     def delete(self, key: str) -> None:
