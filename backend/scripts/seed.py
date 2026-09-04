@@ -8,6 +8,7 @@ Idempotent: truncates the tables it populates before inserting.
 """
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -17,8 +18,10 @@ from sqlalchemy import text
 from app.db import Base, SessionLocal, engine
 from app.dependencies.security import hash_password
 from app.models import Episode, Season, Show, User
+from app.storage import get_storage
 
 SEED_FILE = Path(__file__).resolve().parents[1] / "seed_data" / "seed_shows.json"
+SEED_ISSUES_KEY = "seed_data_issues.json"
 
 
 def load_rows() -> list[dict]:
@@ -31,6 +34,13 @@ def seed():
 
     rows = load_rows()
     issues: list[str] = []
+    # Rows dropped entirely during load can never be re-derived from the DB
+    # afterward (they were never inserted) - unlike a missing-section or
+    # missing-artwork issue, which the validation report can always re-check
+    # live against whatever's actually in the DB. Persisted separately so
+    # GET /admin/validation-report has something durable to read, instead of
+    # this only ever reaching stdout.
+    dropped_duplicates: list[dict] = []
 
     db = SessionLocal()
     try:
@@ -78,11 +88,22 @@ def seed():
             group_lang_key = (content_group, language)
 
             if group_lang_key in seen_content_group_lang:
-                issues.append(
+                detail = (
                     f"{episode_id}: duplicate (content_group={content_group!r}, "
                     f"language={language!r}) already used by "
                     f"{seen_content_group_lang[group_lang_key]} - skipping this row, "
                     "(content_group, language) must be unique"
+                )
+                issues.append(detail)
+                dropped_duplicates.append(
+                    {
+                        "type": "duplicate_content_group_language",
+                        "episode_id": episode_id,
+                        "content_group": content_group,
+                        "language": language,
+                        "kept_episode_id": seen_content_group_lang[group_lang_key],
+                        "detail": detail,
+                    }
                 )
                 continue
             seen_content_group_lang[group_lang_key] = episode_id
@@ -125,7 +146,21 @@ def seed():
     else:
         print("\nNo data issues found.")
 
+    write_seed_issues(dropped_duplicates)
+
     print("\nSeeded users: editor@peblo.dev / editor123, admin@peblo.dev / admin123")
+
+
+def write_seed_issues(dropped_duplicates: list[dict]) -> None:
+    # A dropped duplicate row is never in the DB, so unlike a missing-section
+    # or missing-artwork problem, the validation report can't rediscover it
+    # by re-checking live state - it has to be captured here, at seed time.
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "issues": dropped_duplicates,
+    }
+    storage = get_storage()
+    storage.put(SEED_ISSUES_KEY, json.dumps(payload, indent=2).encode("utf-8"), "application/json")
 
 
 def seed_users(db):

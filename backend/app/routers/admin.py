@@ -8,6 +8,7 @@ from app.db import get_db
 from app.dependencies.auth import require_role
 from app.models import PublishRun, User
 from app.services.catalog import build_catalog
+from app.services.validation_report import build_validation_report
 from app.storage import get_storage
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -52,3 +53,11 @@ def publish_catalog(
         "show_count": run.show_count,
         "episode_count": run.episode_count,
     }
+
+
+@router.get("/validation-report")
+def get_validation_report(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("editor")),
+):
+    return build_validation_report(db)
