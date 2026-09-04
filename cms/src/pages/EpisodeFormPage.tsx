@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useCreateEpisode, useEpisode, useUpdateEpisode } from "../api/episodes";
 import { LANGUAGES, STATUSES } from "../constants/reference";
+import { ArtworkSlot } from "../components/ArtworkSlot";
 import { FormError } from "../components/FormError";
 
 export function EpisodeFormPage() {
@@ -163,6 +164,21 @@ export function EpisodeFormPage() {
           {mutation.isPending ? "Saving…" : "Save"}
         </button>
       </form>
+
+      {isEdit && (
+        <section style={{ marginTop: 32 }}>
+          <h2>Artwork</h2>
+          <p style={{ fontSize: 13, color: "#6b6375", margin: "0 0 12px" }}>
+            Only one artwork upload is required to unblock publishing this episode. All three slots are for
+            completeness, not enforced individually.
+          </p>
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            <ArtworkSlot kind="poster" target={{ episodeId: Number(episodeId) }} />
+            <ArtworkSlot kind="banner" target={{ episodeId: Number(episodeId) }} />
+            <ArtworkSlot kind="thumbnail" target={{ episodeId: Number(episodeId) }} />
+          </div>
+        </section>
+      )}
     </main>
   );
 }

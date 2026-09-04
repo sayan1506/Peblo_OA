@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useCreateShow, useShow, useUpdateShow } from "../api/shows";
 import { CATEGORIES, SECTIONS, STATUSES } from "../constants/reference";
+import { ArtworkSlot } from "../components/ArtworkSlot";
 import { FormError } from "../components/FormError";
 import { MultiSelect } from "../components/MultiSelect";
 
@@ -164,6 +165,17 @@ export function ShowFormPage() {
           {mutation.isPending ? "Saving…" : "Save"}
         </button>
       </form>
+
+      {isEdit && (
+        <section style={{ marginTop: 32 }}>
+          <h2>Artwork</h2>
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            <ArtworkSlot kind="poster" target={{ showId: id }} />
+            <ArtworkSlot kind="banner" target={{ showId: id }} />
+            <ArtworkSlot kind="thumbnail" target={{ showId: id }} />
+          </div>
+        </section>
+      )}
     </main>
   );
 }
