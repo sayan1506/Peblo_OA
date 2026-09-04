@@ -25,6 +25,12 @@ class LocalStorage(Storage):
 
         return f"/static/{key}"
 
+    def get(self, key: str) -> bytes:
+        path = self.base_path / key
+        if not path.exists():
+            raise FileNotFoundError(key)
+        return path.read_bytes()
+
     def delete(self, key: str) -> None:
         path = self.base_path / key
         path.unlink(missing_ok=True)

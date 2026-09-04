@@ -7,5 +7,9 @@ class Storage(ABC):
         """Writes data under key, returns a URL/path the app can serve."""
 
     @abstractmethod
+    def get(self, key: str) -> bytes:
+        """Reads back the bytes stored under key. Raises FileNotFoundError if absent."""
+
+    @abstractmethod
     def delete(self, key: str) -> None:
         ...

@@ -10,7 +10,7 @@ FastAPI, PostgreSQL (SQLAlchemy + Alembic), React + TypeScript for the CMS and v
 
 ## Status
 
-Part A, phases 1-5 done: schema, migrations, seed script, health check, JWT auth with editor/admin roles, full CRUD for shows/seasons/episodes with the three publish-blocking rules enforced, artwork upload with a storage abstraction, and an atomic publish job that builds the catalogue file. The read endpoints (`/catalog`, `/catalog/search`), validation report, CMS, viewer, and CI are still to come.
+Part A, phases 1-6 done: schema, migrations, seed script, health check, JWT auth with editor/admin roles, full CRUD for shows/seasons/episodes with the three publish-blocking rules enforced, artwork upload with a storage abstraction, an atomic publish job, and the public `/catalog` + `/catalog/search` read endpoints. The validation report, CMS, viewer, and CI are still to come.
 
 ## Running it
 
@@ -58,6 +58,16 @@ curl -X POST http://localhost:8000/admin/catalog/publish -H "Authorization: Bear
 
 Writes `backend/storage/catalog.json` and records a `publish_runs` row either way, success or failure.
 
+`/catalog` and `/catalog/search` are the two public, unauthenticated routes - no token needed:
+
+```
+curl http://localhost:8000/catalog
+curl "http://localhost:8000/catalog/search?q=kite&language=en"
+curl "http://localhost:8000/catalog/search?category=adventure&section=featured"
+```
+
+Both 404 with a plain message until the first successful publish.
+
 ## Decisions & trade-offs
 
 - `categories` turned out to be a list per show in the real seed data, not a single value like I'd originally modeled. Went with a Postgres array column + GIN index instead of a proper join table - simpler migration, good enough at this data size, would revisit if categories ever need their own metadata.
@@ -81,5 +91,9 @@ Writes `backend/storage/catalog.json` and records a `publish_runs` row either wa
 - Sections in the catalogue are ordered by `reference.json`'s `sections` list (`featured, series, minisodes, songs`), not alphabetically - that's presumably the intended browse order.
 - `content_group` collapsing picks one canonical title/duration per group - preferring the `en` row if one exists, else whichever language code sorts first. Nothing in the seed data has language variants disagreeing on title, but the schema doesn't guarantee that, so this is a deliberate tie-breaker rather than an assumption.
 - No pagination inside the catalogue file - at 8 shows / ~95 episodes it's trivially small. Would need addressing at real scale; noted as a known limit rather than solved now.
+- `/catalog` and `/catalog/search` read only the published `catalog.json` through the storage abstraction, never the database - that's the actual reason the publish step exists. It also means search is only as fresh as the last publish; editing a show doesn't change what a viewer sees until someone re-publishes. Serving a pre-built file instead of querying live also means the viewer is never affected by a slow or down database, and never sees an editor's half-finished edit.
+- Search returns per-episode rows, not per-show - a search for "kite" should surface the specific episode, not just its parent show, with enough show context in each row to render without a second lookup. `q` matches show title, episode title, and category (substring); `category`/`language`/`section` are exact-match filters, and all four compose with AND.
+- Trailers are reachable through plain `q` search even though they're excluded from the normal season list in a show's detail view - the brief only asks that trailers not show up as a normal season, not that they be unsearchable.
+- Where search actually breaks at this design's current scale: today it's a full in-memory linear scan over every episode, re-parsing the whole JSON file per request - fine at ~95 episodes, not worth optimizing yet. The first real cost at higher volume is the re-parse-per-request, not the scan itself; caching the parsed catalogue in memory (invalidated on republish) would remove that before the linear scan becomes the bottleneck. Past that, `q` matching would need a real index (Postgres `tsvector` on the source tables, or an inverted index built at publish time) rather than a per-request scan.
 
 More to add here as the rest of the parts get built.
