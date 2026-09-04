@@ -10,7 +10,9 @@ FastAPI, PostgreSQL (SQLAlchemy + Alembic), React + TypeScript for the CMS and v
 
 ## Status
 
-Part A, phases 1-8 done (backend complete): schema, migrations, seed script, health check, JWT auth with editor/admin roles, full CRUD for shows/seasons/episodes with the three publish-blocking rules enforced, artwork upload with a storage abstraction, an atomic publish job, the public `/catalog` + `/catalog/search` read endpoints, a live validation report, and a test suite (49 tests) covering the riskiest logic. The CMS, viewer, and CI are still to come.
+Backend (Part A) is complete: schema, migrations, seed script, health check, JWT auth with editor/admin roles, full CRUD for shows/seasons/episodes with the three publish-blocking rules enforced, artwork upload with a storage abstraction, an atomic publish job, the public `/catalog` + `/catalog/search` read endpoints, a live validation report, and a test suite (49 tests) covering the riskiest logic.
+
+CMS (Part B) is underway: the project skeleton, login against the real auth endpoint, and an authenticated API client are wired up. List/form UI, artwork upload, and the publish page are still to come. The viewer and CI are still to come.
 
 ## Running it
 
@@ -82,6 +84,17 @@ Tests:
 
 49 tests. Most need no DB at all; the three in `test_role_enforcement_integration.py` need `docker compose up -d db` and skip cleanly (not fail) if it's not reachable.
 
+### CMS
+
+```
+cd cms
+npm install
+copy .env.example .env
+npm run dev
+```
+
+Runs at `http://localhost:5173`. The backend must already be running on `http://localhost:8000` (CORS is set up for this dev origin - see the backend steps above). Log in with either seeded account; the JWT is stored in `localStorage` and attached to every request.
+
 ## Decisions & trade-offs
 
 - **Schema & seed data:** `categories` is a Postgres array column + GIN index, not a join table - real seed data has it as a list per show, and this is simpler at this scale. `scripts/seed.py` catches real data issues: `ep_9001`/`ep_0004` collide on `(content_group, language)` (duplicate skipped and logged), `ep_0036` is published with no artwork, all 8 "Rhyme Rangers" episodes have no section.
@@ -92,5 +105,6 @@ Tests:
 - **Catalog reads:** `/catalog` and `/catalog/search` read only the published `catalog.json`, never the DB - only `/catalog*` are public, everything else stays editor-gated. Search is per-episode, not per-show: `q` is a substring match on show/episode title/category, `category`/`language`/`section` are exact filters, all AND together. Today it's a full linear scan re-parsed per request - fine at this size, caching the parsed catalogue would be the first fix at scale.
 - **Validation report:** The report and the CRUD publish checks share the same rule functions (`show_publish_problems`/`episode_publish_problems`), so they can't drift apart. `GET /admin/validation-report` is editor-gated, not admin-only, since it's what an editor needs to fix issues before publishing. A dropped duplicate seed row can't be re-derived from the DB later, so it's persisted separately to `storage/seed_data_issues.json`.
 - **Tests:** Coverage is prioritized, not exhaustive - publish atomicity, `content_group` collapsing, and artwork edge cases already had unit tests from the phases that introduced them; the one real gap was role enforcement, closed with unit tests on `get_current_user`/`require_role` plus a few `TestClient` checks against the dev DB. Skipped a full 401/403 matrix across every CRUD route and a transactional test-DB fixture - not worth building for this scope.
+- **CMS auth:** Token stored in plain `localStorage`, not an httpOnly cookie - consistent with this being a bearer-token API, not a session-cookie one. An XSS on this app could read the token; a real production CMS would mitigate that with an httpOnly cookie and a backend session instead. The role is decoded straight out of the JWT payload (no `/me` call needed); a shared `apiFetch` wrapper attaches the token and surfaces the backend's real `detail` message on errors rather than a generic one, since the CRUD/artwork forms need that exact wording.
 
 More to add here as Parts B, C, D, and E get built.

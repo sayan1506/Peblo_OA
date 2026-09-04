@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -9,6 +10,15 @@ from app.routers import admin, artwork, auth, catalog, episodes, health, seasons
 Path(settings.storage_local_path).mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Peblo TV Mini API")
+
+# CMS dev server origin, hardcoded for this exercise - a real deployment would read this from an env var.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth.router)
 app.include_router(shows.router)
