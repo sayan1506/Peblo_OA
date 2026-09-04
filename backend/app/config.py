@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     storage_backend: str = "local"
     storage_local_path: str = "./storage"
     secret_key: str = "change-me"
+    access_token_expire_minutes: int = 60
+    jwt_algorithm: str = "HS256"
 
 
 settings = Settings()

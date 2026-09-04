@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sqlalchemy import text
 
 from app.db import Base, SessionLocal, engine
-from app.models import Episode, Season, Show
+from app.dependencies.security import hash_password
+from app.models import Episode, Season, Show, User
 
 SEED_FILE = Path(__file__).resolve().parents[1] / "seed_data" / "seed_shows.json"
 
@@ -109,6 +110,8 @@ def seed():
             db.add(episode)
 
         db.commit()
+
+        seed_users(db)
     finally:
         db.close()
 
@@ -121,6 +124,15 @@ def seed():
             print(f"  - {issue}")
     else:
         print("\nNo data issues found.")
+
+    print("\nSeeded users: editor@peblo.dev / editor123, admin@peblo.dev / admin123")
+
+
+def seed_users(db):
+    db.execute(text("TRUNCATE TABLE users RESTART IDENTITY CASCADE"))
+    db.add(User(email="editor@peblo.dev", hashed_password=hash_password("editor123"), role="editor"))
+    db.add(User(email="admin@peblo.dev", hashed_password=hash_password("admin123"), role="admin"))
+    db.commit()
 
 
 if __name__ == "__main__":
