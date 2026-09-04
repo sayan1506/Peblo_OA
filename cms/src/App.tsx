@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { EpisodeFormPage } from "./pages/EpisodeFormPage";
 import { LoginPage } from "./pages/LoginPage";
+import { PublishPage } from "./pages/PublishPage";
 import { ShowDetailPage } from "./pages/ShowDetailPage";
 import { ShowFormPage } from "./pages/ShowFormPage";
 import { ShowsListPage } from "./pages/ShowsListPage";
@@ -55,6 +56,14 @@ function App() {
         element={
           <ProtectedRoute>
             <EpisodeFormPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/publish"
+        element={
+          <ProtectedRoute>
+            <PublishPage />
           </ProtectedRoute>
         }
       />

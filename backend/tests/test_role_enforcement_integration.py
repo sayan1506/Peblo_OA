@@ -55,3 +55,17 @@ def test_editor_token_allowed_on_editor_only_validation_report(editor_token):
         "/admin/validation-report", headers={"Authorization": f"Bearer {editor_token}"}
     )
     assert resp.status_code == 200
+
+
+def test_editor_token_allowed_on_editor_only_publish_runs(editor_token):
+    resp = client.get(
+        "/admin/publish-runs", headers={"Authorization": f"Bearer {editor_token}"}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert set(body.keys()) == {"items", "total", "page", "page_size"}
+
+
+def test_no_token_rejected_on_publish_runs():
+    resp = client.get("/admin/publish-runs")
+    assert resp.status_code == 401

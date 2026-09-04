@@ -2,11 +2,14 @@ import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies.auth import require_role
 from app.models import PublishRun, User
+from app.schemas.pagination import Page
+from app.schemas.publish_run import PublishRunRead
 from app.services.catalog import build_catalog
 from app.services.validation_report import build_validation_report
 from app.storage import get_storage
@@ -61,3 +64,16 @@ def get_validation_report(
     user: User = Depends(require_role("editor")),
 ):
     return build_validation_report(db)
+
+
+@router.get("/publish-runs", response_model=Page[PublishRunRead])
+def list_publish_runs(
+    page: int = 1,
+    page_size: int = 20,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("editor")),
+):
+    stmt = select(PublishRun).order_by(PublishRun.started_at.desc())
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    rows = db.execute(stmt.offset((page - 1) * page_size).limit(page_size)).scalars().all()
+    return Page(items=rows, total=total or 0, page=page, page_size=page_size)

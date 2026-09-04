@@ -52,6 +52,9 @@ export function ShowsListPage() {
           <Link to="/shows/new" style={{ marginRight: 12 }}>
             New show
           </Link>
+          <Link to="/publish" style={{ marginRight: 12 }}>
+            Publish
+          </Link>
           <button type="button" onClick={logout}>
             Log out
           </button>
