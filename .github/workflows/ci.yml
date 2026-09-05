@@ -77,7 +77,7 @@ jobs:
         working-directory: backend
       - run: alembic upgrade head
         working-directory: backend
-      - run: pytest tests/ -v
+      - run: python -m pytest tests/ -v
         working-directory: backend
 
   build-images:
