@@ -78,7 +78,13 @@ curl -X POST "http://localhost:8010/artwork?kind=poster&show_id=1" -H "Authoriza
 
 Uploaded files land in `backend/storage/` locally and are served back from `/static/...`.
 
-Publishing needs an admin token (editor is not enough):
+Publishing needs an admin token (editor is not enough). Log in as admin the same way:
+
+```
+curl -X POST http://localhost:8010/auth/login -d "username=admin@peblo.dev&password=admin123"
+```
+
+Then:
 
 ```
 curl -X POST http://localhost:8010/admin/catalog/publish -H "Authorization: Bearer <admin-token>"
