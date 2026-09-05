@@ -11,10 +11,10 @@ Path(settings.storage_local_path).mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Peblo TV Mini API")
 
-# CMS dev server origin, hardcoded for this exercise - a real deployment would read this from an env var.
+# CMS and viewer dev server origins, hardcoded for this exercise - a real deployment would read this from an env var.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

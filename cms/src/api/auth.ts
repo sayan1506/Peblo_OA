@@ -24,7 +24,7 @@ export function decodeRole(token: string): Role | null {
 }
 
 export async function login(email: string, password: string): Promise<Role | null> {
-  const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/auth/login`, {
+  const res = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8010"}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ username: email, password }),
