@@ -5,6 +5,9 @@ import { CatalogError } from "../api/catalog";
 import type { SearchResultRow } from "../api/types";
 import { CATEGORIES, LANGUAGES, SECTIONS } from "../constants/reference";
 import { SearchResultItem } from "../components/SearchResultItem";
+import { EpisodeRowSkeleton } from "../components/ViewerSkeleton";
+import { NotPublishedState } from "../components/NotPublishedState";
+import { LoadFailedState } from "../components/LoadFailedState";
 
 function groupByShow(items: SearchResultRow[]) {
   const groups = new Map<string, { show_title: string; show_slug: string; items: SearchResultRow[] }>();
@@ -41,7 +44,7 @@ export function SearchPage() {
     setUrlParams(next, { replace: true });
   }
 
-  const { data, isLoading, isError, error } = useSearch(
+  const { data, isLoading, isError, error, refetch } = useSearch(
     { q: q || undefined, category: category || undefined, language: language || undefined, section: section || undefined },
     true,
   );
@@ -86,17 +89,17 @@ export function SearchPage() {
         </select>
       </div>
 
-      {isError && (
-        <p>
-          {error instanceof CatalogError && error.status === 404
-            ? "Nothing has been published yet."
-            : error instanceof CatalogError
-              ? error.message
-              : "Search failed."}
-        </p>
-      )}
+      {isLoading && <EpisodeRowSkeleton />}
 
-      {isLoading && <p>Loading…</p>}
+      {isError &&
+        (error instanceof CatalogError && error.status === 404 ? (
+          <NotPublishedState />
+        ) : (
+          <LoadFailedState
+            message={error instanceof CatalogError ? error.message : "Search failed."}
+            onRetry={() => refetch()}
+          />
+        ))}
 
       {!isLoading && !isError && data && data.total === 0 && <p>No results for these filters.</p>}
 

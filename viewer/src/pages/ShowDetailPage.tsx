@@ -3,19 +3,47 @@ import { useCatalog } from "../api/queries";
 import { CatalogError } from "../api/catalog";
 import { ArtworkImage } from "../components/ArtworkImage";
 import { EpisodeRow } from "../components/EpisodeRow";
+import { ShowHeaderSkeleton, EpisodeRowSkeleton } from "../components/ViewerSkeleton";
+import { NotPublishedState } from "../components/NotPublishedState";
+import { LoadFailedState } from "../components/LoadFailedState";
 
 export function ShowDetailPage() {
   const { slug } = useParams();
-  const { data, isLoading, isError, error } = useCatalog();
+  const { data, isLoading, isError, error, refetch } = useCatalog();
 
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) {
+    return (
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
+        <ShowHeaderSkeleton />
+        <EpisodeRowSkeleton />
+      </main>
+    );
+  }
+
   if (isError) {
-    return <p>{error instanceof CatalogError ? error.message : "Failed to load the catalog."}</p>;
+    return (
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
+        {error instanceof CatalogError && error.status === 404 ? (
+          <NotPublishedState />
+        ) : (
+          <LoadFailedState
+            message={error instanceof CatalogError ? error.message : "Failed to load the catalog."}
+            onRetry={() => refetch()}
+          />
+        )}
+      </main>
+    );
   }
 
   const show = data?.sections.flatMap((s) => s.shows).find((s) => s.slug === slug);
 
-  if (!show) return <p>Show not found.</p>;
+  if (!show) {
+    return (
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
+        <p>Show not found.</p>
+      </main>
+    );
+  }
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>

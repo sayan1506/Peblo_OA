@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { assetUrl } from "../api/assetUrl";
 
 type Props = {
@@ -9,6 +10,8 @@ type Props = {
 
 export function ArtworkImage({ src, alt, aspectRatio, className }: Props) {
   const url = assetUrl(src);
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <div
       className={className}
@@ -25,7 +28,19 @@ export function ArtworkImage({ src, alt, aspectRatio, className }: Props) {
       }}
     >
       {url ? (
-        <img src={url} alt={alt} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <img
+          src={url}
+          alt={alt}
+          onLoad={() => setLoaded(true)}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+            opacity: loaded ? 1 : 0,
+            transition: "opacity 200ms ease",
+          }}
+        />
       ) : (
         <span style={{ color: "#6b6375", fontSize: 13 }} aria-hidden="true">
           No artwork
