@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.dependencies.auth import require_role
 from app.models import Season, Show, User
 from app.schemas.season import SeasonCreate, SeasonRead
+from app.services.audit import record_audit_log
 
 router = APIRouter(tags=["seasons"])
 
@@ -34,6 +35,11 @@ def create_season(
 
     season = Season(show_id=show_id, season_number=payload.season_number)
     db.add(season)
+    db.flush()
+    record_audit_log(
+        db, user, "created", "season", season.id,
+        f"added season {season.season_number} to show '{show.title}'",
+    )
     db.commit()
     db.refresh(season)
     return season
@@ -45,8 +51,14 @@ def delete_season(
     db: Session = Depends(get_db),
     user: User = Depends(require_role("editor")),
 ):
-    season = db.get(Season, season_id)
+    season = db.get(Season, season_id, options=[selectinload(Season.show)])
     if season is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Season not found")
+    season_number = season.season_number
+    show_title = season.show.title
     db.delete(season)
+    record_audit_log(
+        db, user, "deleted", "season", season_id,
+        f"deleted season {season_number} from show '{show_title}'",
+    )
     db.commit()

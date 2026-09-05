@@ -11,7 +11,7 @@ from sqlalchemy import text
 from app.db import SessionLocal
 from app.dependencies.security import hash_password
 from app.main import app
-from app.models import Episode, Season, Show, User
+from app.models import AuditLog, Episode, Season, Show, User
 
 client = TestClient(app)
 
@@ -42,6 +42,7 @@ def editor_token(db_session):
         resp = client.post("/auth/login", data={"username": user.email, "password": "x"})
         yield resp.json()["access_token"]
     finally:
+        db_session.query(AuditLog).filter(AuditLog.actor_id == user.id).delete()
         db_session.delete(user)
         db_session.commit()
 

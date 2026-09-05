@@ -8,6 +8,7 @@ from app.dependencies.auth import require_role
 from app.models import Show, User
 from app.schemas.pagination import Page
 from app.schemas.show import ShowCreate, ShowRead, ShowUpdate
+from app.services.audit import record_audit_log
 from app.services.validation import check_show_publishable
 
 router = APIRouter(prefix="/shows", tags=["shows"])
@@ -64,13 +65,15 @@ def create_show(
 
     db.add(show)
     try:
-        db.commit()
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"A show with slug '{payload.slug}' already exists.",
         )
+    record_audit_log(db, user, "created", "show", show.id, f"created show '{show.title}'")
+    db.commit()
     db.refresh(show)
     return show
 
@@ -94,13 +97,19 @@ def update_show(
         check_show_publishable(show)
 
     try:
-        db.commit()
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A show with that slug already exists.",
         )
+    if updates:
+        record_audit_log(
+            db, user, "updated", "show", show.id,
+            f"updated show '{show.title}' ({', '.join(updates.keys())})",
+        )
+    db.commit()
     db.refresh(show)
     return show
 
@@ -114,5 +123,7 @@ def delete_show(
     show = db.get(Show, show_id)
     if show is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Show not found")
+    title = show.title
     db.delete(show)
+    record_audit_log(db, user, "deleted", "show", show_id, f"deleted show '{title}'")
     db.commit()

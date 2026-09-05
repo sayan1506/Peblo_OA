@@ -8,6 +8,7 @@ from app.dependencies.auth import require_role
 from app.models import Episode, Season, Show, User
 from app.schemas.episode import EpisodeCreate, EpisodeRead, EpisodeUpdate
 from app.schemas.pagination import Page
+from app.services.audit import record_audit_log
 from app.services.validation import check_episode_publishable
 
 router = APIRouter(tags=["episodes"])
@@ -88,6 +89,7 @@ def create_episode(
     if episode.status == "published":
         check_episode_publishable(episode)
 
+    record_audit_log(db, user, "created", "episode", episode.id, f"created episode '{episode.title}'")
     db.commit()
     db.refresh(episode)
     return episode
@@ -120,6 +122,11 @@ def update_episode(
     if episode.status == "published":
         check_episode_publishable(episode)
 
+    if updates:
+        record_audit_log(
+            db, user, "updated", "episode", episode.id,
+            f"updated episode '{episode.title}' ({', '.join(updates.keys())})",
+        )
     db.commit()
     db.refresh(episode)
     return episode
@@ -134,5 +141,7 @@ def delete_episode(
     episode = db.get(Episode, episode_id)
     if episode is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Episode not found")
+    title = episode.title
     db.delete(episode)
+    record_audit_log(db, user, "deleted", "episode", episode_id, f"deleted episode '{title}'")
     db.commit()

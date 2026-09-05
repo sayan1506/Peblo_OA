@@ -21,6 +21,7 @@ export function Header() {
         </Link>
         <Link to="/shows">Shows</Link>
         <Link to="/publish">Publish</Link>
+        {role === "admin" && <Link to="/audit-log">Audit log</Link>}
       </nav>
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
         <span style={{ color: "var(--color-muted)", fontSize: 14 }}>

@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.dependencies.auth import require_role
-from app.models import PublishRun, User
+from app.models import AuditLog, PublishRun, User
+from app.schemas.audit_log import AuditLogRead
 from app.schemas.pagination import Page
 from app.schemas.publish_run import PublishRunRead
 from app.services.catalog import build_catalog
@@ -157,3 +158,38 @@ def list_publish_runs(
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
     rows = db.execute(stmt.offset((page - 1) * page_size).limit(page_size)).scalars().all()
     return Page(items=rows, total=total or 0, page=page, page_size=page_size)
+
+
+@router.get("/audit-log", response_model=Page[AuditLogRead])
+def list_audit_log(
+    resource_type: str | None = None,
+    resource_id: int | None = None,
+    page: int = 1,
+    page_size: int = 20,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("admin")),
+):
+    stmt = select(AuditLog, User.email).join(User, User.id == AuditLog.actor_id)
+    if resource_type:
+        stmt = stmt.where(AuditLog.resource_type == resource_type)
+    if resource_id is not None:
+        stmt = stmt.where(AuditLog.resource_id == resource_id)
+    stmt = stmt.order_by(AuditLog.created_at.desc())
+
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    rows = db.execute(stmt.offset((page - 1) * page_size).limit(page_size)).all()
+
+    items = [
+        AuditLogRead(
+            id=entry.id,
+            actor_id=entry.actor_id,
+            actor_email=email,
+            action=entry.action,
+            resource_type=entry.resource_type,
+            resource_id=entry.resource_id,
+            summary=entry.summary,
+            created_at=entry.created_at,
+        )
+        for entry, email in rows
+    ]
+    return Page(items=items, total=total or 0, page=page, page_size=page_size)

@@ -99,3 +99,14 @@ export type DryRunResult = {
   episode_count: number;
   diff: CatalogDiff;
 };
+
+export type AuditLogEntry = {
+  id: number;
+  actor_id: number;
+  actor_email: string;
+  action: string;
+  resource_type: string;
+  resource_id: number;
+  summary: string;
+  created_at: string;
+};

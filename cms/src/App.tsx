@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { AuditLogPage } from "./pages/AuditLogPage";
 import { EpisodeFormPage } from "./pages/EpisodeFormPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PublishPage } from "./pages/PublishPage";
@@ -64,6 +65,14 @@ function App() {
         element={
           <ProtectedRoute>
             <PublishPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/audit-log"
+        element={
+          <ProtectedRoute>
+            <AuditLogPage />
           </ProtectedRoute>
         }
       />

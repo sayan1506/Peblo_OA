@@ -7,6 +7,7 @@ from app.db import get_db
 from app.dependencies.auth import require_role
 from app.models import Artwork, Episode, Show, User
 from app.services.artwork_validation import ArtworkValidationError, validate_artwork
+from app.services.audit import record_audit_log
 from app.storage import get_storage
 
 router = APIRouter(prefix="/artwork", tags=["artwork"])
@@ -51,6 +52,14 @@ def upload_artwork(
         size_bytes=len(data),
     )
     db.add(artwork)
+    db.flush()
+
+    target_title = target.title
+    resource_type = "show" if show_id else "episode"
+    record_audit_log(
+        db, user, "created", "artwork", artwork.id,
+        f"uploaded {kind} artwork for {resource_type} '{target_title}'",
+    )
     db.commit()
     db.refresh(artwork)
     return {
