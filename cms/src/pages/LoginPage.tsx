@@ -60,7 +60,7 @@ export function LoginPage() {
           />
         </div>
         {error && <FormError message={error} />}
-        <button type="submit" disabled={submitting} style={{ padding: "8px 16px" }}>
+        <button type="submit" className="btn-primary" disabled={submitting}>
           {submitting ? "Logging in…" : "Log in"}
         </button>
       </form>

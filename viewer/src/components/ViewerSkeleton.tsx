@@ -1,6 +1,6 @@
 function Bar({ width, height = 16 }: { width: number | string; height?: number }) {
   return (
-    <div aria-hidden="true" style={{ width, height, background: "#e5e4e7", borderRadius: 4 }} />
+    <div aria-hidden="true" style={{ width, height, background: "var(--color-border)", borderRadius: 4 }} />
   );
 }
 
@@ -8,7 +8,7 @@ function Box({ aspectRatio, width }: { aspectRatio: string; width: number | stri
   return (
     <div
       aria-hidden="true"
-      style={{ width, aspectRatio, background: "#e5e4e7", borderRadius: 8, flexShrink: 0 }}
+      style={{ width, aspectRatio, background: "var(--color-border)", borderRadius: 8, flexShrink: 0 }}
     />
   );
 }
@@ -16,7 +16,7 @@ function Box({ aspectRatio, width }: { aspectRatio: string; width: number | stri
 export function HeroSkeleton() {
   return (
     <section style={{ marginBottom: 32 }} aria-hidden="true">
-      <div style={{ aspectRatio: "16 / 9", background: "#e5e4e7", borderRadius: 8 }} />
+      <div style={{ aspectRatio: "16 / 9", background: "var(--color-border)", borderRadius: 8 }} />
       <div style={{ marginTop: 12 }}>
         <Bar width={280} height={28} />
         <div style={{ margin: "8px 0 12px" }}>

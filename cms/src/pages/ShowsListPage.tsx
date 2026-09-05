@@ -4,13 +4,11 @@ import { CATEGORIES, SECTIONS, STATUSES } from "../constants/reference";
 import { EmptyState, ErrorState, SkeletonRows } from "../components/ListStates";
 import { Pagination } from "../components/Pagination";
 import { ApiError } from "../api/client";
-import { useAuth } from "../auth/AuthContext";
 
 const PAGE_SIZE = 20;
 
 export function ShowsListPage() {
   const [params, setParams] = useSearchParams();
-  const { logout, role } = useAuth();
 
   const q = params.get("q") ?? "";
   const section = params.get("section") ?? "";
@@ -45,20 +43,11 @@ export function ShowsListPage() {
     <main style={{ maxWidth: 960, margin: "40px auto", padding: "0 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1>Shows</h1>
-        <div>
-          <span style={{ marginRight: 12, color: "#6b6375" }}>
-            Logged in as <strong>{role}</strong>
-          </span>
-          <Link to="/shows/new" style={{ marginRight: 12 }}>
+        <Link to="/shows/new">
+          <button type="button" className="btn-primary">
             New show
-          </Link>
-          <Link to="/publish" style={{ marginRight: 12 }}>
-            Publish
-          </Link>
-          <button type="button" onClick={logout}>
-            Log out
           </button>
-        </div>
+        </Link>
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "16px 0" }}>
@@ -101,37 +90,39 @@ export function ShowsListPage() {
           onRetry={() => refetch()}
         />
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #e5e4e7" }}>
-              <th>Title</th>
-              <th>Section</th>
-              <th>Categories</th>
-              <th>Status</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <SkeletonRows count={PAGE_SIZE} />
-            ) : data && data.items.length > 0 ? (
-              data.items.map((show) => (
-                <tr key={show.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                  <td>{show.title}</td>
-                  <td>{show.section ?? "—"}</td>
-                  <td>{show.categories.join(", ") || "—"}</td>
-                  <td>{show.status}</td>
-                  <td>
-                    <Link to={`/shows/${show.id}`} style={{ marginRight: 12 }}>
-                      View episodes
-                    </Link>
-                    <Link to={`/shows/${show.id}/edit`}>Edit</Link>
-                  </td>
-                </tr>
-              ))
-            ) : null}
-          </tbody>
-        </table>
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ padding: "10px 16px" }}>Title</th>
+                <th>Section</th>
+                <th>Categories</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <SkeletonRows count={PAGE_SIZE} />
+              ) : data && data.items.length > 0 ? (
+                data.items.map((show) => (
+                  <tr key={show.id}>
+                    <td style={{ padding: "10px 16px" }}>{show.title}</td>
+                    <td>{show.section ?? "—"}</td>
+                    <td>{show.categories.join(", ") || "—"}</td>
+                    <td>{show.status}</td>
+                    <td>
+                      <Link to={`/shows/${show.id}`} style={{ marginRight: 12 }}>
+                        View episodes
+                      </Link>
+                      <Link to={`/shows/${show.id}/edit`}>Edit</Link>
+                    </td>
+                  </tr>
+                ))
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {!isLoading && !isError && data && data.items.length === 0 && (

@@ -63,7 +63,9 @@ export function ShowDetailPage() {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <h1>{show.data?.title}</h1>
-            <Link to={`/shows/${id}/edit`}>Edit show</Link>
+            <Link to={`/shows/${id}/edit`}>
+              <button type="button">Edit show</button>
+            </Link>
           </div>
 
           {(seasons.data?.length ?? 0) === 0 ? (
@@ -91,14 +93,14 @@ export function ShowDetailPage() {
                               display: "flex",
                               justifyContent: "space-between",
                               padding: "6px 0",
-                              borderBottom: "1px solid #f0f0f0",
+                              borderBottom: "1px solid var(--color-border)",
                             }}
                           >
                             <span>
                               {ep.episode_number}. {ep.title} ({ep.language})
                             </span>
                             <span>
-                              <span style={{ color: "#6b6375", marginRight: 12 }}>{ep.status}</span>
+                              <span style={{ color: "var(--color-muted)", marginRight: 12 }}>{ep.status}</span>
                               <Link to={`/shows/${id}/episodes/${ep.id}/edit`}>Edit</Link>
                             </span>
                           </li>
@@ -142,9 +144,9 @@ function SkeletonSeasons() {
     <>
       {Array.from({ length: 2 }, (_, i) => (
         <div key={i} style={{ marginBottom: 24 }} aria-hidden="true">
-          <div style={{ height: 20, width: 140, background: "#e5e4e7", borderRadius: 4, marginBottom: 8 }} />
-          <div style={{ height: 16, width: "80%", background: "#e5e4e7", borderRadius: 4, marginBottom: 6 }} />
-          <div style={{ height: 16, width: "70%", background: "#e5e4e7", borderRadius: 4 }} />
+          <div style={{ height: 20, width: 140, background: "var(--color-border)", borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ height: 16, width: "80%", background: "var(--color-border)", borderRadius: 4, marginBottom: 6 }} />
+          <div style={{ height: 16, width: "70%", background: "var(--color-border)", borderRadius: 4 }} />
         </div>
       ))}
     </>

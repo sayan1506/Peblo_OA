@@ -1,12 +1,88 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
   font: 16px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --color-bg: #0b0b0f;
+  --color-surface: #17161d;
+  --color-border: #2a2830;
+  --color-text: #f4f3f6;
+  --color-muted: #a7a3b0;
+  --color-accent: #e5484d;
+  --color-accent-hover: #f2666a;
+  --color-danger: #ff6b6b;
+  --color-focus: #e5484d;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 #root {
   min-height: 100svh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-muted);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+input,
+select {
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+input::placeholder {
+  color: var(--color-muted);
+}
+
+.show-tile {
+  display: block;
+  transition: transform 150ms ease;
+}
+
+.show-tile:hover {
+  transform: translateY(-4px) scale(1.03);
+}
+
+.list-row {
+  transition: background-color 120ms ease;
+}
+
+.list-row:hover {
+  background: var(--color-surface);
 }

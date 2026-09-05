@@ -11,7 +11,8 @@ export function ShowRow({ title, shows }: { title: string; shows: CatalogShow[] 
           <Link
             key={show.slug}
             to={`/shows/${show.slug}`}
-            style={{ flex: "0 0 140px", textDecoration: "none", color: "inherit" }}
+            className="show-tile"
+            style={{ flex: "0 0 140px" }}
           >
             <ArtworkImage src={show.artwork.poster} alt={show.title} aspectRatio="2 / 3" />
             <p style={{ margin: "6px 0 0", fontSize: 13, lineHeight: 1.3 }}>{show.title}</p>

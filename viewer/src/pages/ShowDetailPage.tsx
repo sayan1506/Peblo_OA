@@ -53,9 +53,9 @@ export function ShowDetailPage() {
         </div>
         <div>
           <h1 style={{ margin: "0 0 8px" }}>{show.title}</h1>
-          {show.synopsis && <p style={{ margin: "0 0 8px", color: "#4a4650" }}>{show.synopsis}</p>}
+          {show.synopsis && <p style={{ margin: "0 0 8px", color: "var(--color-muted)" }}>{show.synopsis}</p>}
           {show.categories.length > 0 && (
-            <p style={{ margin: 0, fontSize: 13, color: "#6b6375" }}>{show.categories.join(", ")}</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--color-muted)" }}>{show.categories.join(", ")}</p>
           )}
         </div>
       </div>

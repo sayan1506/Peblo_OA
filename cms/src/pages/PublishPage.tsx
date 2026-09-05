@@ -54,8 +54,8 @@ export function PublishPage() {
       </p>
       <h1>Publish</h1>
 
-      <section style={{ marginBottom: 32 }}>
-        <h2>Validation report</h2>
+      <section className="card" style={{ marginBottom: 24 }}>
+        <h2 style={{ marginTop: 0 }}>Validation report</h2>
 
         {report.isLoading && <p>Loading validation report…</p>}
 
@@ -69,7 +69,7 @@ export function PublishPage() {
         {report.data && (
           <>
             {totalBlocking === 0 ? (
-              <p style={{ color: "#1a7f37" }}>Nothing is blocking publish.</p>
+              <p style={{ color: "var(--color-success)" }}>Nothing is blocking publish.</p>
             ) : (
               <p>
                 <strong>{report.data.summary.blocking_shows}</strong> show(s) and{" "}
@@ -106,7 +106,7 @@ export function PublishPage() {
             {seedIssueCount > 0 && (
               <details>
                 <summary>{seedIssueCount} informational seed data issue(s) (not blocking)</summary>
-                <pre style={{ fontSize: 12, overflowX: "auto", background: "#f6f5f7", padding: 12 }}>
+                <pre style={{ fontSize: 12, overflowX: "auto", background: "var(--color-surface)", padding: 12 }}>
                   {JSON.stringify(report.data.seed_issues, null, 2)}
                 </pre>
               </details>
@@ -115,8 +115,8 @@ export function PublishPage() {
         )}
       </section>
 
-      <section style={{ marginBottom: 32 }}>
-        <h2>Publish</h2>
+      <section className="card" style={{ marginBottom: 24 }}>
+        <h2 style={{ marginTop: 0 }}>Publish</h2>
 
         {role !== "admin" && (
           <PermissionDeniedState message={`Publishing requires the admin role. You're signed in as ${role}.`} />
@@ -126,14 +126,14 @@ export function PublishPage() {
           <>
             <button
               type="button"
+              className="btn-primary"
               disabled={totalBlocking > 0 || publish.isPending || report.isLoading}
               onClick={handlePublish}
-              style={{ padding: "8px 16px" }}
             >
               {publish.isPending ? "Publishing…" : "Publish catalog"}
             </button>
             {totalBlocking > 0 && (
-              <p style={{ color: "#6b6375", margin: "8px 0 0" }}>
+              <p style={{ color: "var(--color-muted)", margin: "8px 0 0" }}>
                 Resolve {totalBlocking} blocking issue(s) above before publishing.
               </p>
             )}
@@ -148,7 +148,7 @@ export function PublishPage() {
                 />
               ))}
             {lastResult && (
-              <p style={{ color: "#1a7f37", margin: "8px 0 0" }}>
+              <p style={{ color: "var(--color-success)", margin: "8px 0 0" }}>
                 Published — {lastResult.show_count} show(s), {lastResult.episode_count} episode(s).
               </p>
             )}
@@ -156,8 +156,8 @@ export function PublishPage() {
         )}
       </section>
 
-      <section>
-        <h2>Run history</h2>
+      <section className="card">
+        <h2 style={{ marginTop: 0 }}>Run history</h2>
 
         {runs.isLoading && <p>Loading run history…</p>}
 
@@ -172,9 +172,9 @@ export function PublishPage() {
 
         {runs.data && runs.data.items.length > 0 && (
           <>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table>
               <thead>
-                <tr style={{ textAlign: "left", borderBottom: "1px solid #e5e4e7" }}>
+                <tr>
                   <th>Started</th>
                   <th>Finished</th>
                   <th>Outcome</th>
@@ -185,10 +185,12 @@ export function PublishPage() {
               </thead>
               <tbody>
                 {runs.data.items.map((run) => (
-                  <tr key={run.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                  <tr key={run.id}>
                     <td>{formatTimestamp(run.started_at)}</td>
                     <td>{formatTimestamp(run.finished_at)}</td>
-                    <td style={{ color: run.outcome === "failed" ? "crimson" : undefined }}>{run.outcome}</td>
+                    <td style={{ color: run.outcome === "failed" ? "var(--color-danger)" : undefined }}>
+                      {run.outcome}
+                    </td>
                     <td>{run.show_count}</td>
                     <td>{run.episode_count}</td>
                     <td>{run.detail ?? "—"}</td>

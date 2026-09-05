@@ -19,7 +19,7 @@ export function ArtworkImage({ src, alt, aspectRatio, className }: Props) {
       aria-label={url ? undefined : alt}
       style={{
         aspectRatio,
-        background: "#2a2830",
+        background: "var(--color-surface)",
         borderRadius: 8,
         overflow: "hidden",
         display: "flex",
@@ -42,7 +42,7 @@ export function ArtworkImage({ src, alt, aspectRatio, className }: Props) {
           }}
         />
       ) : (
-        <span style={{ color: "#6b6375", fontSize: 13 }} aria-hidden="true">
+        <span style={{ color: "var(--color-muted)", fontSize: 13 }} aria-hidden="true">
           No artwork
         </span>
       )}

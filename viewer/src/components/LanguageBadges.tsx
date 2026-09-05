@@ -10,8 +10,9 @@ export function LanguageBadges({ languages }: { languages: string[] }) {
             textTransform: "uppercase",
             padding: "1px 5px",
             borderRadius: 3,
-            background: "#e5e4e7",
-            color: "#4a4650",
+            background: "var(--color-surface)",
+            color: "var(--color-muted)",
+            border: "1px solid var(--color-border)",
           }}
         >
           {lang}

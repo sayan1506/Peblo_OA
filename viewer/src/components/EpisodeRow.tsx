@@ -7,12 +7,15 @@ export function EpisodeRow({ episode }: { episode: CatalogEpisode }) {
   const duration = formatDuration(episode.duration_seconds);
   return (
     <li
+      className="list-row"
       style={{
         display: "flex",
         gap: 12,
         alignItems: "center",
-        padding: "8px 0",
-        borderBottom: "1px solid #eceaee",
+        padding: "8px 12px",
+        margin: "0 -12px",
+        borderRadius: 6,
+        borderBottom: "1px solid var(--color-border)",
       }}
     >
       <div style={{ width: 96, flexShrink: 0 }}>
@@ -22,7 +25,7 @@ export function EpisodeRow({ episode }: { episode: CatalogEpisode }) {
         <p style={{ margin: "0 0 4px", fontWeight: 500 }}>
           {episode.episode_number}. {episode.title}
         </p>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "#6b6375" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: "var(--color-muted)" }}>
           {duration && <span>{duration}</span>}
           <LanguageBadges languages={episode.languages} />
         </div>

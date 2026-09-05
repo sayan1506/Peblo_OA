@@ -14,7 +14,7 @@ export function MultiSelect({
   }
 
   return (
-    <fieldset style={{ border: "1px solid #e5e4e7", borderRadius: 4, padding: 12 }}>
+    <fieldset style={{ border: "1px solid var(--color-border)", borderRadius: 4, padding: 12 }}>
       <legend>{label}</legend>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
         {options.map((option) => (
