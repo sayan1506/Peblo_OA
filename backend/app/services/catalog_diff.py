@@ -13,6 +13,16 @@ def _flatten_episodes(show: dict) -> dict[str, dict]:
     return result
 
 
+def count_catalog(catalog: dict) -> tuple[int, int]:
+    """Returns (show_count, episode_count) for a catalog dict, matching the
+    counting convention build_catalog() uses (episodes counted per collapsed
+    content_group, across seasons and trailers)."""
+    shows = _flatten_shows(catalog)
+    show_count = len(shows)
+    episode_count = sum(len(_flatten_episodes(show)) for show in shows.values())
+    return show_count, episode_count
+
+
 def diff_catalogs(old: dict | None, new: dict) -> dict:
     """Compares a not-yet-published catalog build against the currently
     published one (or nothing, if this would be the first publish)."""

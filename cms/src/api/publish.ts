@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "./client";
-import type { DryRunResult, Page, PublishRun, ValidationReport } from "./types";
+import type { DryRunResult, Page, PublishRun, RollbackResult, ValidationReport } from "./types";
 
 export function useValidationReport() {
   return useQuery({
@@ -33,6 +33,18 @@ export function usePublishCatalog() {
         show_count: number;
         episode_count: number;
       }>,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["publish-runs"] });
+      qc.invalidateQueries({ queryKey: ["validation-report"] });
+    },
+  });
+}
+
+export function useRollbackCatalog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (runId: number) =>
+      apiFetch(`/admin/catalog/rollback/${runId}`, { method: "POST" }) as Promise<RollbackResult>,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["publish-runs"] });
       qc.invalidateQueries({ queryKey: ["validation-report"] });

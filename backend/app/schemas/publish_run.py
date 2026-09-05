@@ -14,3 +14,5 @@ class PublishRunRead(BaseModel):
     show_count: int
     episode_count: int
     detail: str | None
+    has_snapshot: bool
+    rolled_back_from_id: int | None

@@ -1,4 +1,4 @@
-from app.services.catalog_diff import diff_catalogs
+from app.services.catalog_diff import count_catalog, diff_catalogs
 
 
 def _catalog(shows: list[dict]) -> dict:
@@ -96,3 +96,18 @@ def test_trailers_are_included_in_episode_diff():
     diff = diff_catalogs(old, new)
 
     assert diff["episodes_added"] == [{"show_slug": "s1", "content_group": "cg-trailer", "title": "Trailer"}]
+
+
+def test_count_catalog_counts_shows_and_collapsed_episodes():
+    catalog = _catalog(
+        [
+            _show("s1", "Show One", [_episode("cg1", "Ep One"), _episode("cg2", "Ep Two")]),
+            _show("s2", "Show Two", [], trailers=[_episode("cg-trailer", "Trailer")]),
+        ]
+    )
+
+    assert count_catalog(catalog) == (2, 3)
+
+
+def test_count_catalog_empty_when_no_shows():
+    assert count_catalog(_catalog([])) == (0, 0)

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -11,7 +11,7 @@ from app.models import PublishRun, User
 from app.schemas.pagination import Page
 from app.schemas.publish_run import PublishRunRead
 from app.services.catalog import build_catalog
-from app.services.catalog_diff import diff_catalogs
+from app.services.catalog_diff import count_catalog, diff_catalogs
 from app.services.validation_report import build_validation_report
 from app.storage import get_storage
 
@@ -48,6 +48,7 @@ def publish_catalog(
     run.outcome = "published"
     run.show_count = show_count
     run.episode_count = episode_count
+    run.catalog_snapshot = catalog
     run.finished_at = datetime.now(timezone.utc)
     db.commit()
 
@@ -56,6 +57,62 @@ def publish_catalog(
         "outcome": run.outcome,
         "show_count": run.show_count,
         "episode_count": run.episode_count,
+    }
+
+
+@router.post("/catalog/rollback/{run_id}", status_code=status.HTTP_200_OK)
+def rollback_catalog(
+    run_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("admin")),
+):
+    target = db.get(PublishRun, run_id)
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Publish run not found")
+    if target.catalog_snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This run has no stored catalog snapshot to roll back to",
+        )
+
+    snapshot = target.catalog_snapshot
+
+    run = PublishRun(
+        triggered_by=user.id,
+        started_at=datetime.now(timezone.utc),
+        outcome="running",
+    )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+
+    try:
+        storage = get_storage()
+        storage.put(CATALOG_KEY, json.dumps(snapshot).encode("utf-8"), "application/json")
+    except Exception as e:
+        run.outcome = "failed"
+        run.detail = str(e)
+        run.finished_at = datetime.now(timezone.utc)
+        db.commit()
+        raise
+
+    show_count, episode_count = count_catalog(snapshot)
+
+    run.outcome = "rolled_back"
+    run.show_count = show_count
+    run.episode_count = episode_count
+    run.catalog_snapshot = snapshot
+    run.rolled_back_from_id = target.id
+    run.detail = f"Rolled back to run #{target.id}"
+    run.finished_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return {
+        "run_id": run.id,
+        "outcome": run.outcome,
+        "show_count": run.show_count,
+        "episode_count": run.episode_count,
+        "rolled_back_from_id": run.rolled_back_from_id,
     }
 
 

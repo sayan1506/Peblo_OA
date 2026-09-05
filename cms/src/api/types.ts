@@ -43,6 +43,16 @@ export type PublishRun = {
   show_count: number;
   episode_count: number;
   detail: string | null;
+  has_snapshot: boolean;
+  rolled_back_from_id: number | null;
+};
+
+export type RollbackResult = {
+  run_id: number;
+  outcome: string;
+  show_count: number;
+  episode_count: number;
+  rolled_back_from_id: number | null;
 };
 
 export type ValidationReportShow = {

@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { useDryRunCatalog, usePublishCatalog, usePublishRuns, useValidationReport } from "../api/publish";
+import {
+  useDryRunCatalog,
+  usePublishCatalog,
+  usePublishRuns,
+  useRollbackCatalog,
+  useValidationReport,
+} from "../api/publish";
 import { useAuth } from "../auth/AuthContext";
 import { CatalogDiffView } from "../components/CatalogDiffView";
 import { EmptyState, ErrorState, PermissionDeniedState } from "../components/ListStates";
@@ -24,6 +30,7 @@ export function PublishPage() {
   const runs = usePublishRuns(runsPage, RUNS_PAGE_SIZE);
   const publish = usePublishCatalog();
   const dryRun = useDryRunCatalog();
+  const rollback = useRollbackCatalog();
   const [lastResult, setLastResult] = useState<{ outcome: string; show_count: number; episode_count: number } | null>(
     null,
   );
@@ -49,6 +56,19 @@ export function PublishPage() {
       await dryRun.mutateAsync();
     } catch {
       // ApiError is rendered below via dryRun.error
+    }
+  }
+
+  async function handleRollback(run: { id: number; show_count: number; episode_count: number }) {
+    const confirmed = window.confirm(
+      `Roll back the live catalog to run #${run.id} (${run.show_count} show(s), ${run.episode_count} episode(s))? ` +
+        "This will overwrite the currently published catalog.",
+    );
+    if (!confirmed) return;
+    try {
+      await rollback.mutateAsync(run.id);
+    } catch {
+      // ApiError is rendered below via rollback.error
     }
   }
 
@@ -211,6 +231,13 @@ export function PublishPage() {
 
         {runs.data && runs.data.items.length > 0 && (
           <>
+            {rollback.error && (
+              <div style={{ marginBottom: 12 }}>
+                <FormError
+                  message={rollback.error instanceof ApiError ? rollback.error.message : "Failed to roll back catalog."}
+                />
+              </div>
+            )}
             <table>
               <thead>
                 <tr>
@@ -220,6 +247,7 @@ export function PublishPage() {
                   <th>Shows</th>
                   <th>Episodes</th>
                   <th>Detail</th>
+                  {role === "admin" && <th>Rollback</th>}
                 </tr>
               </thead>
               <tbody>
@@ -227,12 +255,37 @@ export function PublishPage() {
                   <tr key={run.id}>
                     <td>{formatTimestamp(run.started_at)}</td>
                     <td>{formatTimestamp(run.finished_at)}</td>
-                    <td style={{ color: run.outcome === "failed" ? "var(--color-danger)" : undefined }}>
+                    <td
+                      style={{
+                        color:
+                          run.outcome === "failed"
+                            ? "var(--color-danger)"
+                            : run.outcome === "rolled_back"
+                              ? "var(--color-warning-text)"
+                              : undefined,
+                      }}
+                    >
                       {run.outcome}
+                      {run.rolled_back_from_id != null && ` (from run #${run.rolled_back_from_id})`}
                     </td>
                     <td>{run.show_count}</td>
                     <td>{run.episode_count}</td>
                     <td>{run.detail ?? "—"}</td>
+                    {role === "admin" && (
+                      <td>
+                        {run.has_snapshot ? (
+                          <button
+                            type="button"
+                            disabled={rollback.isPending}
+                            onClick={() => handleRollback(run)}
+                          >
+                            {rollback.isPending && rollback.variables === run.id ? "Rolling back…" : "Roll back"}
+                          </button>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
