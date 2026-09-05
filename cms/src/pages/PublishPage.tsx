@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { usePublishCatalog, usePublishRuns, useValidationReport } from "../api/publish";
+import { useDryRunCatalog, usePublishCatalog, usePublishRuns, useValidationReport } from "../api/publish";
 import { useAuth } from "../auth/AuthContext";
+import { CatalogDiffView } from "../components/CatalogDiffView";
 import { EmptyState, ErrorState, PermissionDeniedState } from "../components/ListStates";
 import { FormError } from "../components/FormError";
 import { Pagination } from "../components/Pagination";
@@ -22,6 +23,7 @@ export function PublishPage() {
   const report = useValidationReport();
   const runs = usePublishRuns(runsPage, RUNS_PAGE_SIZE);
   const publish = usePublishCatalog();
+  const dryRun = useDryRunCatalog();
   const [lastResult, setLastResult] = useState<{ outcome: string; show_count: number; episode_count: number } | null>(
     null,
   );
@@ -39,6 +41,14 @@ export function PublishPage() {
       setLastResult(result);
     } catch {
       // ApiError is rendered below via publish.error
+    }
+  }
+
+  async function handleDryRun() {
+    try {
+      await dryRun.mutateAsync();
+    } catch {
+      // ApiError is rendered below via dryRun.error
     }
   }
 
@@ -112,6 +122,35 @@ export function PublishPage() {
               </details>
             )}
           </>
+        )}
+      </section>
+
+      <section className="card" style={{ marginBottom: 24 }}>
+        <h2 style={{ marginTop: 0 }}>Preview changes</h2>
+        <p style={{ color: "var(--color-muted)", marginTop: 0 }}>
+          Builds the catalogue a publish would write, without writing it, and compares it against what's live now.
+        </p>
+
+        <button type="button" disabled={dryRun.isPending} onClick={handleDryRun}>
+          {dryRun.isPending ? "Building preview…" : "Preview changes"}
+        </button>
+
+        {dryRun.error && (
+          <div style={{ marginTop: 8 }}>
+            <FormError
+              message={dryRun.error instanceof ApiError ? dryRun.error.message : "Failed to build preview."}
+            />
+          </div>
+        )}
+
+        {dryRun.data && (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ margin: "0 0 12px" }}>
+              This publish would produce <strong>{dryRun.data.show_count}</strong> show(s) and{" "}
+              <strong>{dryRun.data.episode_count}</strong> episode(s).
+            </p>
+            <CatalogDiffView diff={dryRun.data.diff} />
+          </div>
         )}
       </section>
 

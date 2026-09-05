@@ -11,6 +11,7 @@ from app.models import PublishRun, User
 from app.schemas.pagination import Page
 from app.schemas.publish_run import PublishRunRead
 from app.services.catalog import build_catalog
+from app.services.catalog_diff import diff_catalogs
 from app.services.validation_report import build_validation_report
 from app.storage import get_storage
 
@@ -55,6 +56,28 @@ def publish_catalog(
         "outcome": run.outcome,
         "show_count": run.show_count,
         "episode_count": run.episode_count,
+    }
+
+
+@router.get("/catalog/dry-run")
+def dry_run_catalog(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("editor")),
+):
+    """Builds the catalog that a real publish would write, without writing
+    it, and diffs it against whatever is currently published (if anything)."""
+    new_catalog, show_count, episode_count = build_catalog(db)
+
+    storage = get_storage()
+    try:
+        current_catalog = json.loads(storage.get(CATALOG_KEY))
+    except FileNotFoundError:
+        current_catalog = None
+
+    return {
+        "show_count": show_count,
+        "episode_count": episode_count,
+        "diff": diff_catalogs(current_catalog, new_catalog),
     }
 
 

@@ -75,3 +75,17 @@ export type ValidationReport = {
     seed_issues: number;
   };
 };
+
+export type CatalogDiff = {
+  shows_added: { slug: string; title: string }[];
+  shows_removed: { slug: string; title: string }[];
+  episodes_added: { show_slug: string; content_group: string; title: string }[];
+  episodes_removed: { show_slug: string; content_group: string; title: string }[];
+  episodes_changed: { show_slug: string; content_group: string; title: string; changed_fields: string[] }[];
+};
+
+export type DryRunResult = {
+  show_count: number;
+  episode_count: number;
+  diff: CatalogDiff;
+};

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "./client";
-import type { Page, PublishRun, ValidationReport } from "./types";
+import type { DryRunResult, Page, PublishRun, ValidationReport } from "./types";
 
 export function useValidationReport() {
   return useQuery({
@@ -14,6 +14,12 @@ export function usePublishRuns(page: number, pageSize = 10) {
     queryKey: ["publish-runs", page],
     queryFn: () =>
       apiFetch(`/admin/publish-runs?page=${page}&page_size=${pageSize}`) as Promise<Page<PublishRun>>,
+  });
+}
+
+export function useDryRunCatalog() {
+  return useMutation({
+    mutationFn: () => apiFetch("/admin/catalog/dry-run") as Promise<DryRunResult>,
   });
 }
 
