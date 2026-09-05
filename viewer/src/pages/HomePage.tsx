@@ -1,5 +1,7 @@
 import { useCatalog } from "../api/queries";
 import { CatalogError } from "../api/catalog";
+import { Hero } from "../components/Hero";
+import { ShowRow } from "../components/ShowRow";
 
 export function HomePage() {
   const { data, isLoading, isError, error } = useCatalog();
@@ -9,12 +11,15 @@ export function HomePage() {
     return <p>{error instanceof CatalogError ? error.message : "Failed to load the catalog."}</p>;
   }
 
+  const sections = data?.sections ?? [];
+  const heroShow = sections[0]?.shows[0];
+
   return (
-    <main style={{ maxWidth: 960, margin: "40px auto", padding: "0 16px" }}>
-      <h1>Peblo TV Mini</h1>
-      <pre style={{ overflowX: "auto", background: "#f6f5f7", padding: 12 }}>
-        {JSON.stringify(data, null, 2)}
-      </pre>
+    <main style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 16px" }}>
+      {heroShow && <Hero show={heroShow} />}
+      {sections.map((section) => (
+        <ShowRow key={section.section} title={section.section} shows={section.shows} />
+      ))}
     </main>
   );
 }
