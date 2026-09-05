@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EpisodeCreate(BaseModel):
@@ -20,7 +20,7 @@ class EpisodeUpdate(BaseModel):
 
 
 class EpisodeRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: int
     season_id: int
@@ -30,3 +30,4 @@ class EpisodeRead(BaseModel):
     language: str
     duration_seconds: int | None
     status: str
+    artwork: dict[str, str] = Field(validation_alias="artwork_map")

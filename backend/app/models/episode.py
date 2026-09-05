@@ -1,7 +1,14 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.models.artwork import artwork_url_map
+
+if TYPE_CHECKING:
+    from app.models.artwork import Artwork
+    from app.models.season import Season
 
 
 class Episode(Base):
@@ -21,3 +28,7 @@ class Episode(Base):
 
     season: Mapped["Season"] = relationship(back_populates="episodes")
     artworks: Mapped[list["Artwork"]] = relationship(back_populates="episode", cascade="all, delete-orphan")
+
+    @property
+    def artwork_map(self) -> dict[str, str]:
+        return artwork_url_map(self.artworks)

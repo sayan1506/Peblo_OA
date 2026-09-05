@@ -4,7 +4,15 @@ import { ApiError } from "../api/client";
 import { ARTWORK_SPECS, type ArtworkKind } from "../constants/reference";
 import { FormError } from "./FormError";
 
-export function ArtworkSlot({ kind, target }: { kind: ArtworkKind; target: UploadTarget }) {
+export function ArtworkSlot({
+  kind,
+  target,
+  existingUrl,
+}: {
+  kind: ArtworkKind;
+  target: UploadTarget;
+  existingUrl?: string;
+}) {
   const spec = ARTWORK_SPECS[kind];
   const upload = useUploadArtwork();
   const [file, setFile] = useState<File | null>(null);
@@ -33,15 +41,15 @@ export function ArtworkSlot({ kind, target }: { kind: ArtworkKind; target: Uploa
   }
 
   return (
-    <div style={{ border: "1px solid #e5e4e7", borderRadius: 4, padding: 12 }}>
+    <div className="card" style={{ padding: 12 }}>
       <strong style={{ display: "block", textTransform: "capitalize" }}>{kind}</strong>
-      <p style={{ fontSize: 13, color: "#6b6375", margin: "2px 0 8px" }}>
+      <p style={{ fontSize: 13, color: "var(--color-muted)", margin: "2px 0 8px" }}>
         {spec.aspect}, ~{spec.targetPx[0]}x{spec.targetPx[1]}px, max {spec.maxKb}KB
       </p>
 
-      {previewUrl && (
+      {(previewUrl ?? existingUrl) && (
         <img
-          src={previewUrl}
+          src={previewUrl ?? existingUrl}
           alt={`${kind} preview`}
           style={{ display: "block", maxWidth: "100%", maxHeight: 160, marginBottom: 8 }}
         />
@@ -54,7 +62,7 @@ export function ArtworkSlot({ kind, target }: { kind: ArtworkKind; target: Uploa
       </button>
 
       {uploaded && (
-        <p style={{ fontSize: 13, color: "#2a7f2a", margin: "8px 0 0" }}>
+        <p style={{ fontSize: 13, color: "var(--color-success)", margin: "8px 0 0" }}>
           Uploaded — {uploaded.width}x{uploaded.height}
         </p>
       )}

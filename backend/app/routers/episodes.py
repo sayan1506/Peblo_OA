@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.dependencies.auth import require_role
@@ -25,7 +25,7 @@ def list_episodes(
     db: Session = Depends(get_db),
     user: User = Depends(require_role("editor")),
 ):
-    stmt = select(Episode).join(Season).join(Show)
+    stmt = select(Episode).join(Season).join(Show).options(selectinload(Episode.artworks))
     if q:
         stmt = stmt.where(Episode.title.ilike(f"%{q}%"))
     if language:
@@ -49,7 +49,7 @@ def get_episode(
     db: Session = Depends(get_db),
     user: User = Depends(require_role("editor")),
 ):
-    episode = db.get(Episode, episode_id)
+    episode = db.get(Episode, episode_id, options=[selectinload(Episode.artworks)])
     if episode is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Episode not found")
     return episode

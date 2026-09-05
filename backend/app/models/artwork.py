@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.episode import Episode
+    from app.models.show import Show
 
 
 class Artwork(Base):
@@ -18,3 +24,12 @@ class Artwork(Base):
 
     show: Mapped["Show"] = relationship(back_populates="artworks")
     episode: Mapped["Episode"] = relationship(back_populates="artworks")
+
+
+def artwork_url_map(artworks: list["Artwork"]) -> dict[str, str]:
+    """Latest-uploaded artwork per kind, keyed by kind, as `/static/...` URLs."""
+    by_kind: dict[str, Artwork] = {}
+    for art in artworks:
+        if art.kind not in by_kind or art.id > by_kind[art.kind].id:
+            by_kind[art.kind] = art
+    return {kind: f"/static/{art.storage_key}" for kind, art in by_kind.items()}

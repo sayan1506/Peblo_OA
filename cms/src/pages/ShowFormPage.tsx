@@ -7,6 +7,7 @@ import { ArtworkSlot } from "../components/ArtworkSlot";
 import { ErrorState } from "../components/ListStates";
 import { FormError } from "../components/FormError";
 import { MultiSelect } from "../components/MultiSelect";
+import { assetUrl } from "../api/assetUrl";
 
 export function ShowFormPage() {
   const { showId } = useParams();
@@ -118,7 +119,7 @@ export function ShowFormPage() {
             style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }}
           />
           {isEdit && (
-            <p style={{ fontSize: 13, color: "#6b6375", margin: "4px 0 0" }}>
+            <p style={{ fontSize: 13, color: "var(--color-muted)", margin: "4px 0 0" }}>
               Slug can't be changed after a show is created.
             </p>
           )}
@@ -176,7 +177,7 @@ export function ShowFormPage() {
           <FormError message={mutation.error instanceof ApiError ? mutation.error.message : "Failed to save show."} />
         )}
 
-        <button type="submit" disabled={mutation.isPending} style={{ padding: "8px 16px" }}>
+        <button type="submit" className="btn-primary" disabled={mutation.isPending}>
           {mutation.isPending ? "Saving…" : "Save"}
         </button>
       </form>
@@ -185,9 +186,13 @@ export function ShowFormPage() {
         <section style={{ marginTop: 32 }}>
           <h2>Artwork</h2>
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-            <ArtworkSlot kind="poster" target={{ showId: id }} />
-            <ArtworkSlot kind="banner" target={{ showId: id }} />
-            <ArtworkSlot kind="thumbnail" target={{ showId: id }} />
+            <ArtworkSlot kind="poster" target={{ showId: id }} existingUrl={assetUrl(existing.data?.artwork.poster)} />
+            <ArtworkSlot kind="banner" target={{ showId: id }} existingUrl={assetUrl(existing.data?.artwork.banner)} />
+            <ArtworkSlot
+              kind="thumbnail"
+              target={{ showId: id }}
+              existingUrl={assetUrl(existing.data?.artwork.thumbnail)}
+            />
           </div>
         </section>
       )}

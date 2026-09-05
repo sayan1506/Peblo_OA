@@ -1,9 +1,15 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ARRAY, DateTime, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.models.artwork import artwork_url_map
+
+if TYPE_CHECKING:
+    from app.models.artwork import Artwork
+    from app.models.season import Season
 
 
 class Show(Base):
@@ -26,3 +32,7 @@ class Show(Base):
 
     seasons: Mapped[list["Season"]] = relationship(back_populates="show", cascade="all, delete-orphan")
     artworks: Mapped[list["Artwork"]] = relationship(back_populates="show", cascade="all, delete-orphan")
+
+    @property
+    def artwork_map(self) -> dict[str, str]:
+        return artwork_url_map(self.artworks)

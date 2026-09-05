@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.dependencies.auth import require_role
@@ -24,7 +24,7 @@ def list_shows(
     db: Session = Depends(get_db),
     user: User = Depends(require_role("editor")),
 ):
-    stmt = select(Show)
+    stmt = select(Show).options(selectinload(Show.artworks))
     if q:
         stmt = stmt.where(Show.title.ilike(f"%{q}%"))
     if section:
@@ -46,7 +46,7 @@ def get_show(
     db: Session = Depends(get_db),
     user: User = Depends(require_role("editor")),
 ):
-    show = db.get(Show, show_id)
+    show = db.get(Show, show_id, options=[selectinload(Show.artworks)])
     if show is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Show not found")
     return show

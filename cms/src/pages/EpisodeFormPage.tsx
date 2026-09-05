@@ -6,6 +6,7 @@ import { LANGUAGES, STATUSES } from "../constants/reference";
 import { ArtworkSlot } from "../components/ArtworkSlot";
 import { ErrorState } from "../components/ListStates";
 import { FormError } from "../components/FormError";
+import { assetUrl } from "../api/assetUrl";
 
 export function EpisodeFormPage() {
   const { showId, seasonId, episodeId } = useParams();
@@ -121,7 +122,7 @@ export function EpisodeFormPage() {
             onChange={(e) => setContentGroup(e.target.value)}
             style={{ display: "block", width: "100%", padding: 8, marginTop: 4 }}
           />
-          <p style={{ fontSize: 13, color: "#6b6375", margin: "4px 0 0" }}>
+          <p style={{ fontSize: 13, color: "var(--color-muted)", margin: "4px 0 0" }}>
             Episodes sharing a content group are language variants of the same episode.
           </p>
         </div>
@@ -175,7 +176,7 @@ export function EpisodeFormPage() {
           />
         )}
 
-        <button type="submit" disabled={mutation.isPending} style={{ padding: "8px 16px" }}>
+        <button type="submit" className="btn-primary" disabled={mutation.isPending}>
           {mutation.isPending ? "Saving…" : "Save"}
         </button>
       </form>
@@ -183,14 +184,26 @@ export function EpisodeFormPage() {
       {isEdit && (
         <section style={{ marginTop: 32 }}>
           <h2>Artwork</h2>
-          <p style={{ fontSize: 13, color: "#6b6375", margin: "0 0 12px" }}>
+          <p style={{ fontSize: 13, color: "var(--color-muted)", margin: "0 0 12px" }}>
             Only one artwork upload is required to unblock publishing this episode. All three slots are for
             completeness, not enforced individually.
           </p>
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-            <ArtworkSlot kind="poster" target={{ episodeId: Number(episodeId) }} />
-            <ArtworkSlot kind="banner" target={{ episodeId: Number(episodeId) }} />
-            <ArtworkSlot kind="thumbnail" target={{ episodeId: Number(episodeId) }} />
+            <ArtworkSlot
+              kind="poster"
+              target={{ episodeId: Number(episodeId) }}
+              existingUrl={assetUrl(existing.data?.artwork.poster)}
+            />
+            <ArtworkSlot
+              kind="banner"
+              target={{ episodeId: Number(episodeId) }}
+              existingUrl={assetUrl(existing.data?.artwork.banner)}
+            />
+            <ArtworkSlot
+              kind="thumbnail"
+              target={{ episodeId: Number(episodeId) }}
+              existingUrl={assetUrl(existing.data?.artwork.thumbnail)}
+            />
           </div>
         </section>
       )}

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ShowBase(BaseModel):
@@ -22,7 +22,8 @@ class ShowUpdate(BaseModel):
 
 
 class ShowRead(ShowBase):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: int
     status: str
+    artwork: dict[str, str] = Field(validation_alias="artwork_map")

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "./client";
 import type { ArtworkKind } from "../constants/reference";
 
@@ -13,6 +13,7 @@ export type UploadedArtwork = {
 };
 
 export function useUploadArtwork() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ kind, target, file }: { kind: ArtworkKind; target: UploadTarget; file: File }) => {
       const params = new URLSearchParams({ kind });
@@ -23,6 +24,10 @@ export function useUploadArtwork() {
       form.append("file", file);
 
       return apiFetch(`/artwork?${params}`, { method: "POST", body: form }) as Promise<UploadedArtwork>;
+    },
+    onSuccess: (_data, { target }) => {
+      if ("showId" in target) qc.invalidateQueries({ queryKey: ["show", target.showId] });
+      else qc.invalidateQueries({ queryKey: ["episode", target.episodeId] });
     },
   });
 }

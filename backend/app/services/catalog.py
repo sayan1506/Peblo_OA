@@ -6,7 +6,8 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Artwork, Episode, Season, Show
+from app.models import Episode, Season, Show
+from app.models.artwork import artwork_url_map
 
 REFERENCE_PATH = Path(__file__).resolve().parents[2] / "seed_data" / "reference.json"
 
@@ -21,14 +22,6 @@ def _pick_canonical(episodes: list[Episode]) -> Episode:
     if en_rows:
         return en_rows[0]
     return min(episodes, key=lambda e: e.language)
-
-
-def _artwork_urls(artworks: list[Artwork]) -> dict[str, str]:
-    by_kind: dict[str, Artwork] = {}
-    for art in artworks:
-        if art.kind not in by_kind or art.id > by_kind[art.kind].id:
-            by_kind[art.kind] = art
-    return {kind: f"/static/{art.storage_key}" for kind, art in by_kind.items()}
 
 
 def _collapse_episodes(episodes: list[Episode]) -> list[dict]:
@@ -47,7 +40,7 @@ def _collapse_episodes(episodes: list[Episode]) -> list[dict]:
                 "title": canonical.title,
                 "duration_seconds": canonical.duration_seconds,
                 "languages": sorted({r.language for r in rows}),
-                "artwork": _artwork_urls(artworks),
+                "artwork": artwork_url_map(artworks),
             }
         )
     entries.sort(key=lambda e: e["episode_number"])
@@ -115,7 +108,7 @@ def build_catalog(db: Session) -> tuple[dict, int, int]:
                     "title": show.title,
                     "synopsis": show.synopsis,
                     "categories": show.categories,
-                    "artwork": _artwork_urls(show.artworks),
+                    "artwork": artwork_url_map(show.artworks),
                     "seasons": seasons_payload,
                     "trailers": trailers_payload,
                 }

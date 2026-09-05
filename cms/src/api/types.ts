@@ -6,6 +6,7 @@ export type Show = {
   section: string | null;
   categories: string[];
   status: string;
+  artwork: Record<string, string>;
 };
 
 export type Season = {
@@ -23,6 +24,7 @@ export type Episode = {
   language: string;
   duration_seconds: number | null;
   status: string;
+  artwork: Record<string, string>;
 };
 
 export type Page<T> = {

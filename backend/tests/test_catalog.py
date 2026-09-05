@@ -1,5 +1,6 @@
 from app.models import Artwork, Episode
-from app.services.catalog import _artwork_urls, _collapse_episodes, _pick_canonical
+from app.models.artwork import artwork_url_map
+from app.services.catalog import _collapse_episodes, _pick_canonical
 
 
 def _episode(**kwargs) -> Episode:
@@ -56,10 +57,10 @@ def test_artwork_urls_picks_highest_id_per_kind():
     old = Artwork(id=1, kind="thumbnail", storage_key="artwork/thumbnail/old.jpg", width=640, height=360, size_bytes=1)
     new = Artwork(id=2, kind="thumbnail", storage_key="artwork/thumbnail/new.jpg", width=640, height=360, size_bytes=1)
 
-    urls = _artwork_urls([old, new])
+    urls = artwork_url_map([old, new])
 
     assert urls == {"thumbnail": "/static/artwork/thumbnail/new.jpg"}
 
 
 def test_artwork_urls_empty_when_no_artwork():
-    assert _artwork_urls([]) == {}
+    assert artwork_url_map([]) == {}
