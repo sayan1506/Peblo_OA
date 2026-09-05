@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Episode, Season, Show
+from app.models import Season, Show
 from app.services.validation import episode_publish_problems, show_publish_problems
 from app.storage import get_storage
 

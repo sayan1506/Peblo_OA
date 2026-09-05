@@ -18,11 +18,40 @@ services:
   api:
     build: ./backend
     env_file: .env
+    environment:
+      # Overrides .env's localhost:5433 (correct for host-side dev, meaningless
+      # inside this container) with the compose-network address and the
+      # container-internal Postgres port.
+      DATABASE_URL: postgresql+psycopg2://peblo:peblo@db:5432/peblo
+      SEED_ON_START: "true"
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8010:8010"
+    volumes:
+      - api-storage:/app/storage
+
+  cms:
+    build:
+      context: ./cms
+      args:
+        VITE_API_URL: http://localhost:8010
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+  viewer:
+    build:
+      context: ./viewer
+      args:
+        VITE_API_URL: http://localhost:8010
+    depends_on:
+      - api
+    ports:
+      - "5174:80"
 
 volumes:
   pgdata:
+  api-storage:

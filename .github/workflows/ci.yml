@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+        working-directory: backend
+      - run: ruff check app tests scripts
+        working-directory: backend
+
+  lint-cms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: cms/package-lock.json
+      - run: npm ci
+        working-directory: cms
+      - run: npm run lint
+        working-directory: cms
+      - run: npx tsc -b --noEmit
+        working-directory: cms
+
+  lint-viewer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: viewer/package-lock.json
+      - run: npm ci
+        working-directory: viewer
+      - run: npm run lint
+        working-directory: viewer
+      - run: npx tsc -b --noEmit
+        working-directory: viewer
+
+  test-backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: peblo
+          POSTGRES_USER: peblo
+          POSTGRES_PASSWORD: peblo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U peblo -d peblo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+psycopg2://peblo:peblo@localhost:5432/peblo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+        working-directory: backend
+      - run: alembic upgrade head
+        working-directory: backend
+      - run: pytest tests/ -v
+        working-directory: backend
+
+  build-images:
+    needs: [lint-backend, lint-cms, lint-viewer, test-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build -t peblo-backend:${{ github.sha }} ./backend
+      - run: docker build -t peblo-cms:${{ github.sha }} --build-arg VITE_API_URL=http://localhost:8010 ./cms
+      - run: docker build -t peblo-viewer:${{ github.sha }} --build-arg VITE_API_URL=http://localhost:8010 ./viewer
+
+  deploy:
+    needs: [build-images]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy (written, not wired to a real target)
+        run: |
+          # This take-home has no provisioned cloud target, so this step documents
+          # the deploy this pipeline would run rather than faking a real one.
+          #
+          # 1. Tag and push the three images built in build-images to a registry
+          #    (e.g. `docker tag peblo-backend:$GITHUB_SHA registry/peblo-backend:$GITHUB_SHA`,
+          #    then `docker push`), using a registry credential stored as a repo secret.
+          # 2. Run `alembic upgrade head` against the production DATABASE_URL as a
+          #    one-off task *before* swapping traffic, so schema changes land ahead
+          #    of the new code that depends on them.
+          # 3. Roll the api/cms/viewer services to the new image tag (e.g. update an
+          #    ECS task definition / Kubernetes deployment / systemd unit's image ref)
+          #    with a health-checked rolling restart, so a bad build never fully
+          #    replaces a healthy one.
+          # 4. Poll GET /health on the new revision before considering the deploy
+          #    successful; roll back to the previous tag automatically on failure.
+          echo "Deploy target not provisioned for this exercise - steps above describe the real pipeline."
