@@ -1,54 +1,119 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useSearch } from "../api/queries";
 import { CatalogError } from "../api/catalog";
-import type { SearchParams } from "../api/types";
+import type { SearchResultRow } from "../api/types";
+import { CATEGORIES, LANGUAGES, SECTIONS } from "../constants/reference";
+import { SearchResultItem } from "../components/SearchResultItem";
+
+function groupByShow(items: SearchResultRow[]) {
+  const groups = new Map<string, { show_title: string; show_slug: string; items: SearchResultRow[] }>();
+  for (const item of items) {
+    if (!groups.has(item.show_slug)) {
+      groups.set(item.show_slug, { show_title: item.show_title, show_slug: item.show_slug, items: [] });
+    }
+    groups.get(item.show_slug)!.items.push(item);
+  }
+  return [...groups.values()];
+}
 
 export function SearchPage() {
-  const [params, setParams] = useState<SearchParams>({});
-  const [submitted, setSubmitted] = useState<SearchParams | null>(null);
+  const [urlParams, setUrlParams] = useSearchParams();
+  const q = urlParams.get("q") ?? "";
+  const category = urlParams.get("category") ?? "";
+  const language = urlParams.get("language") ?? "";
+  const section = urlParams.get("section") ?? "";
 
-  const { data, isLoading, isError, error } = useSearch(submitted ?? {}, submitted !== null);
+  const [qInput, setQInput] = useState(q);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitted(params);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      if (qInput !== q) updateParam("q", qInput);
+    }, 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qInput]);
+
+  function updateParam(key: string, value: string) {
+    const next = new URLSearchParams(urlParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setUrlParams(next, { replace: true });
   }
 
+  const { data, isLoading, isError, error } = useSearch(
+    { q: q || undefined, category: category || undefined, language: language || undefined, section: section || undefined },
+    true,
+  );
+
+  const groups = data ? groupByShow(data.items) : [];
+
   return (
-    <main style={{ maxWidth: 960, margin: "40px auto", padding: "0 16px" }}>
-      <h1>Search</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+    <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
+      <h1 style={{ fontSize: 22 }}>Search</h1>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "16px 0 24px" }}>
         <input
           type="search"
-          placeholder="q"
-          value={params.q ?? ""}
-          onChange={(e) => setParams({ ...params, q: e.target.value })}
+          placeholder="Search titles, episodes, categories…"
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
+          style={{ padding: 6, minWidth: 220 }}
         />
-        <input
-          placeholder="category"
-          value={params.category ?? ""}
-          onChange={(e) => setParams({ ...params, category: e.target.value })}
-        />
-        <input
-          placeholder="language"
-          value={params.language ?? ""}
-          onChange={(e) => setParams({ ...params, language: e.target.value })}
-        />
-        <input
-          placeholder="section"
-          value={params.section ?? ""}
-          onChange={(e) => setParams({ ...params, section: e.target.value })}
-        />
-        <button type="submit">Search</button>
-      </form>
+        <select value={section} onChange={(e) => updateParam("section", e.target.value)}>
+          <option value="">All sections</option>
+          {SECTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select value={category} onChange={(e) => updateParam("category", e.target.value)}>
+          <option value="">All categories</option>
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <select value={language} onChange={(e) => updateParam("language", e.target.value)}>
+          <option value="">All languages</option>
+          {LANGUAGES.map((l) => (
+            <option key={l} value={l}>
+              {l.toUpperCase()}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {isError && (
+        <p>
+          {error instanceof CatalogError && error.status === 404
+            ? "Nothing has been published yet."
+            : error instanceof CatalogError
+              ? error.message
+              : "Search failed."}
+        </p>
+      )}
 
       {isLoading && <p>Loading…</p>}
-      {isError && <p>{error instanceof CatalogError ? error.message : "Search failed."}</p>}
-      {data && (
-        <pre style={{ overflowX: "auto", background: "#f6f5f7", padding: 12 }}>
-          {JSON.stringify(data.items, null, 2)}
-        </pre>
-      )}
+
+      {!isLoading && !isError && data && data.total === 0 && <p>No results for these filters.</p>}
+
+      {!isLoading &&
+        !isError &&
+        groups.map((group) => (
+          <section key={group.show_slug} style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>
+              <Link to={`/shows/${group.show_slug}`}>{group.show_title}</Link>
+            </h2>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {group.items.map((item) => (
+                <SearchResultItem key={item.content_group} item={item} />
+              ))}
+            </ul>
+          </section>
+        ))}
     </main>
   );
 }
